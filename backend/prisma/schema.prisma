@@ -1,0 +1,14 @@
+// Prisma schema for restaurant management system
+// ...existing code...
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Add models: User, Restaurant, Table, TableSession, Category, MenuItem, Modifier, Order, OrderItem, Payment
+// ...models will be filled in next step...
