@@ -1,0 +1,32 @@
+import express from "express";
+import http from "http";
+import { Server as SocketIOServer } from "socket.io";
+import session from "express-session";
+import passport from "passport";
+import cors from "cors";
+import { json, urlencoded } from "body-parser";
+import { errorHandler } from "./shared/middlewares/errorHandler";
+import { registerRoutes } from "./modules";
+
+const app = express();
+const server = http.createServer(app);
+const io = new SocketIOServer(server, { cors: { origin: "*" } });
+
+app.use(cors());
+app.use(json());
+app.use(urlencoded({ extended: true }));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "secret",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+
+registerRoutes(app);
+
+app.use(errorHandler);
+
+export { app, server, io };
