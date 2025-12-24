@@ -6,7 +6,7 @@ import passport from "passport";
 import cors from "cors";
 import { json, urlencoded } from "body-parser";
 import { errorHandler } from "./shared/middlewares/errorHandler";
-import { registerRoutes } from "./modules";
+import { registerRoutes } from "./modules/registerRoutes";
 
 const app = express();
 const server = http.createServer(app);

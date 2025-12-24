@@ -1,6 +1,7 @@
-// Prisma schema for restaurant management system
-// ...existing code...
 
+// =========================
+// Prisma configuration
+// =========================
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,5 +11,205 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Add models: User, Restaurant, Table, TableSession, Category, MenuItem, Modifier, Order, OrderItem, Payment
-// ...models will be filled in next step...
+
+//
+// =========================
+// ENUMS
+// =========================
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  WAITER
+  KITCHEN
+  CUSTOMER
+}
+
+enum MenuItemStatus {
+  AVAILABLE
+  UNAVAILABLE
+  SOLD_OUT
+}
+
+enum TableSessionStatus {
+  OPEN
+  CLOSED
+}
+
+enum OrderStatus {
+  RECEIVED
+  PREPARING
+  READY
+  SERVED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum PaymentMethod {
+  CASH
+  STRIPE
+  VNPAY
+  MOMO
+  ZALOPAY
+}
+
+//
+// =========================
+// USER & AUTH
+// =========================
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password   String
+  fullName   String
+  avatarUrl  String?
+  role       Role
+  isActive   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders     Order[]
+}
+
+//
+// =========================
+// RESTAURANT & TABLE
+// =========================
+model Restaurant {
+  id        String   @id @default(uuid())
+  name      String
+  address   String
+  createdAt DateTime @default(now())
+
+  tables    Table[]
+  categories Category[]
+}
+
+model Table {
+  id           String   @id @default(uuid())
+  restaurantId String
+  name         String
+  capacity     Int
+  isActive     Boolean  @default(true)
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  sessions     TableSession[]
+}
+
+model TableSession {
+  id        String   @id @default(uuid())
+  tableId   String
+  status    TableSessionStatus @default(OPEN)
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+
+  table     Table @relation(fields: [tableId], references: [id])
+  order     Order?
+}
+
+//
+// =========================
+// MENU
+// =========================
+model Category {
+  id           String   @id @default(uuid())
+  restaurantId String
+  name         String
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  menuItems    MenuItem[]
+}
+
+model MenuItem {
+  id                  String   @id @default(uuid())
+  categoryId           String
+  name                 String
+  description          String?
+  price                Float
+  status               MenuItemStatus @default(AVAILABLE)
+  isChefRecommended    Boolean @default(false)
+  createdAt            DateTime @default(now())
+
+  category              Category @relation(fields: [categoryId], references: [id])
+  modifierGroups        ModifierGroup[]
+  orderItems            OrderItem[]
+}
+
+model ModifierGroup {
+  id         String   @id @default(uuid())
+  menuItemId String
+  name       String
+  required   Boolean @default(false)
+
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  options    ModifierOption[]
+}
+
+model ModifierOption {
+  id              String   @id @default(uuid())
+  modifierGroupId String
+  name            String
+  priceDelta      Float    @default(0)
+
+  modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id])
+  orderItemLinks  OrderItemModifier[]
+}
+
+//
+// =========================
+// ORDER
+// =========================
+model Order {
+  id              String   @id @default(uuid())
+  tableSessionId  String   @unique
+  userId          String?
+  status          OrderStatus @default(RECEIVED)
+  totalAmount     Float    @default(0)
+  createdAt       DateTime @default(now())
+
+  tableSession    TableSession @relation(fields: [tableSessionId], references: [id])
+  user            User? @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+  payment         Payment?
+}
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  orderId    String
+  menuItemId String
+  quantity   Int
+  price      Float
+  note       String?
+
+  order      Order @relation(fields: [orderId], references: [id])
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  modifiers  OrderItemModifier[]
+}
+
+model OrderItemModifier {
+  id               String   @id @default(uuid())
+  orderItemId      String
+  modifierOptionId String
+
+  orderItem        OrderItem @relation(fields: [orderItemId], references: [id])
+  modifierOption   ModifierOption @relation(fields: [modifierOptionId], references: [id])
+}
+
+//
+// =========================
+// PAYMENT
+// =========================
+model Payment {
+  id        String   @id @default(uuid())
+  orderId   String   @unique
+  method    PaymentMethod
+  status    PaymentStatus @default(PENDING)
+  amount    Float
+  paidAt    DateTime?
+
+  order     Order @relation(fields: [orderId], references: [id])
+}
