@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { guestApi } from '../api/guestApi';
 import { Category, MenuItem } from '../types';
-import ItemModal from '../components/ItemModal'; // Component chúng ta đã viết ở bước trước
+import ItemModal from '../components/ItemModal';
+import { useCartStore } from '../store/useCartStore';
+import CartModal from '../components/CartModal';
 
 export default function MenuPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const cartItems = useCartStore(state => state.items);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,8 +37,8 @@ export default function MenuPage() {
             <h2 className="text-lg font-bold text-orange-600 mb-3 border-b pb-1">{cat.name}</h2>
             <div className="space-y-4">
               {cat.menuItems.map(item => (
-                <div 
-                  key={item.id} 
+                <div
+                  key={item.id}
                   onClick={() => setSelectedItem(item)}
                   className="bg-white p-3 rounded-xl shadow-sm flex gap-3 cursor-pointer active:scale-95 transition-transform"
                 >
@@ -41,7 +46,7 @@ export default function MenuPage() {
                   <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center text-xs text-gray-400">
                     No Image
                   </div>
-                  
+
                   <div className="flex-1">
                     <h3 className="font-bold text-gray-800">{item.name}</h3>
                     <p className="text-xs text-gray-500 line-clamp-2">{item.description}</p>
@@ -63,17 +68,24 @@ export default function MenuPage() {
 
       {/* Modal chi tiết món & Modifiers */}
       {selectedItem && (
-        <ItemModal 
-          item={selectedItem} 
-          onClose={() => setSelectedItem(null)} 
+        <ItemModal
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
         />
       )}
 
       {/* Nút Giỏ hàng nổi */}
-      <button className="fixed bottom-6 left-4 right-4 bg-orange-600 text-white p-4 rounded-2xl shadow-xl font-bold flex justify-between items-center">
+      <button 
+        onClick={() => setIsCartOpen(true)} 
+        className="fixed bottom-6 left-4 right-4 bg-orange-600 text-white p-4 rounded-2xl shadow-xl font-bold flex justify-between items-center"
+      >
         <span>Xem giỏ hàng</span>
-        <span className="bg-white/20 px-3 py-1 rounded-lg">0 món</span>
       </button>
+
+      <CartModal 
+        isOpen={isCartOpen} 
+        onClose={() => setIsCartOpen(false)} 
+      />
     </div>
   );
 }
