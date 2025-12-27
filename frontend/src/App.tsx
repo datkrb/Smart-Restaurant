@@ -13,6 +13,9 @@ import AdminMenuPage from './pages/admin/AdminMenuPage';
 import AdminTablePage from './pages/admin/AdminTablePage';
 import AdminCategoryPage from './pages/admin/AdminCategoryPage';
 
+import WaiterPage from './pages/waiter/WaiterPage';
+import KitchenPage from './pages/kithchen/KitchenPage';
+
 // Placeholder cho các trang chưa tạo (để tránh lỗi import)
 const OrderManagement = () => <div className="p-6 text-2xl font-bold">Quản lý Đơn hàng (Phase 4)</div>;
 
@@ -28,15 +31,19 @@ function App() {
       <Route path="/admin" element={<AdminLayout />}>
         {/* Tự động chuyển hướng /admin về /admin/menu */}
         <Route index element={<Navigate to="/admin/menu" replace />} />
-        
+
         <Route path="categories" element={<AdminCategoryPage />} />
         <Route path="menu" element={<AdminMenuPage />} />
         <Route path="tables" element={<AdminTablePage />} />
-        
+
         {/* Route dự phòng cho Phase 4 */}
         <Route path="orders" element={<OrderManagement />} />
+
       </Route>
 
+      <Route path="/waiter" element={<WaiterPage />} />
+      <Route path="/kitchen" element={<KitchenPage />} />
+      
       {/* ========================= 404 NOT FOUND ========================= */}
       <Route path="*" element={
         <div className="flex flex-col items-center justify-center h-screen">
