@@ -11,9 +11,9 @@ import MenuPage from './pages/MenuPage';
 // Admin Pages (Phase 2)
 import AdminMenuPage from './pages/admin/AdminMenuPage';
 import AdminTablePage from './pages/admin/AdminTablePage';
+import AdminCategoryPage from './pages/admin/AdminCategoryPage';
 
 // Placeholder cho các trang chưa tạo (để tránh lỗi import)
-const AdminCategoryPage = () => <div className="p-6 text-2xl font-bold">Quản lý Danh mục (Phase 2)</div>;
 const OrderManagement = () => <div className="p-6 text-2xl font-bold">Quản lý Đơn hàng (Phase 4)</div>;
 
 function App() {

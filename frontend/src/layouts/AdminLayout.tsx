@@ -11,7 +11,7 @@ const AdminLayout = () => {
           <Link to="/admin/categories" className="block p-3 hover:bg-slate-700 rounded-lg">Danh mục</Link>
           <Link to="/admin/menu" className="block p-3 hover:bg-slate-700 rounded-lg">Món ăn</Link>
           <Link to="/admin/tables" className="block p-3 hover:bg-slate-700 rounded-lg">Quản lý bàn</Link>
-          <Link to="/admin/orders" className="block p-3 hover:bg-slate-700 rounded-lg opacity-50">Đơn hàng (Phase 4)</Link>
+          {/* <Link to="/admin/orders" className="block p-3 hover:bg-slate-700 rounded-lg opacity-50">Đơn hàng (Phase 4)</Link> */}
         </nav>
       </aside>
 
