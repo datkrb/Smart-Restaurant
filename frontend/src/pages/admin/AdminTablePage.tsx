@@ -38,7 +38,7 @@ export default function AdminTablePage() {
       // restaurantId: Lấy ID từ bản ghi Restaurant bạn đã Seed trong DB
       await axiosClient.post('/admin/tables', {
         ...newTable,
-        restaurantId: "37f51c2d-d366-4d01-9e66-4d019e664d01"
+        restaurantId: "37f51c2d-d366-4d01-9e66-1d1a17dbae3b"
       });
       setIsModalOpen(false);
       fetchTables(); // Tải lại danh sách sau khi thêm
