@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import * as CategoryController from "../controllers/admin.category.controller";
 import * as MenuController from "../controllers/admin.menu.controller";
 import * as TableController from "../controllers/admin.table.controller";
-//import { getOrders, updateOrderStatus } from "../controllers/admin.order.controller";
+import { getOrders, updateOrderStatus } from "../controllers/admin.order.controller";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -25,7 +25,7 @@ router.get("/tables", TableController.getTables);
 router.post("/tables", TableController.createTable);
 
 // --- ORDER ROUTES ---
-//router.get("/orders", getOrders);
-//router.patch("/orders/:id/status", updateOrderStatus);
+router.get("/orders", getOrders);
+router.patch("/orders/:id/status", updateOrderStatus);
 
 export default router;
