@@ -32,6 +32,19 @@ export default function WaiterPage() {
     }
   };
 
+  // 1. Hàm xử lý cập nhật trạng thái
+  const handleUpdateStatus = async (orderId: string, status: 'PREPARING' | 'CANCELLED') => {
+    if (!window.confirm(`Bạn có chắc muốn ${status === 'PREPARING' ? 'duyệt' : 'hủy'} đơn này?`)) return;
+    
+    try {
+      await axiosClient.patch(`/admin/orders/${orderId}/status`, { status });
+      // Sau khi update xong thì load lại danh sách để đơn đó biến mất
+      fetchOrders();
+    } catch (error) {
+      alert("Lỗi cập nhật trạng thái đơn hàng");
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
     const interval = setInterval(fetchOrders, 10000); 
@@ -76,7 +89,20 @@ export default function WaiterPage() {
               ))}
             </div>
             
-            {/* Phần Action Buttons sẽ làm ở bước sau */}
+            <div className="p-4 bg-gray-50 flex gap-3">
+              <button 
+                onClick={() => handleUpdateStatus(order.id, 'CANCELLED')}
+                className="flex-1 bg-red-100 text-red-700 py-2 rounded-lg font-medium hover:bg-red-200"
+              >
+                Từ chối
+              </button>
+              <button 
+                onClick={() => handleUpdateStatus(order.id, 'PREPARING')}
+                className="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 shadow-sm"
+              >
+                Xác nhận
+              </button>
+            </div>
           </div>
         ))}
       </div>
