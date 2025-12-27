@@ -1,56 +1,51 @@
-import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate, Routes, Route } from 'react-router-dom';
-import { guestApi } from './api/guestApi';
-import { useSessionStore } from './store/useSessionStore';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+
+// Layouts
+import AdminLayout from './layouts/AdminLayout';
+
+// Guest Pages (Phase 3)
+import EntryPoint from './pages/EntryPoint';
 import MenuPage from './pages/MenuPage';
+
+// Admin Pages (Phase 2)
+import AdminMenuPage from './pages/admin/AdminMenuPage';
+import AdminTablePage from './pages/admin/AdminTablePage';
+
+// Placeholder cho các trang chưa tạo (để tránh lỗi import)
+const AdminCategoryPage = () => <div className="p-6 text-2xl font-bold">Quản lý Danh mục (Phase 2)</div>;
+const OrderManagement = () => <div className="p-6 text-2xl font-bold">Quản lý Đơn hàng (Phase 4)</div>;
 
 function App() {
   return (
     <Routes>
+      {/* ========================= GUEST ROUTES (Phase 3) ========================= */}
+      {/* Route mặc định để quét mã QR: /?tableId=xxx */}
       <Route path="/" element={<EntryPoint />} />
       <Route path="/menu" element={<MenuPage />} />
-      {/* Route dự phòng cho trang không tồn tại */}
-      <Route path="*" element={<div className="p-10 text-center">Trang không tồn tại (404)</div>} />
+
+      {/* ========================= ADMIN ROUTES (Phase 2) ========================= */}
+      <Route path="/admin" element={<AdminLayout />}>
+        {/* Tự động chuyển hướng /admin về /admin/menu */}
+        <Route index element={<Navigate to="/admin/menu" replace />} />
+        
+        <Route path="categories" element={<AdminCategoryPage />} />
+        <Route path="menu" element={<AdminMenuPage />} />
+        <Route path="tables" element={<AdminTablePage />} />
+        
+        {/* Route dự phòng cho Phase 4 */}
+        <Route path="orders" element={<OrderManagement />} />
+      </Route>
+
+      {/* ========================= 404 NOT FOUND ========================= */}
+      <Route path="*" element={
+        <div className="flex flex-col items-center justify-center h-screen">
+          <h1 className="text-4xl font-bold text-gray-800">404</h1>
+          <p className="text-gray-500">Trang bạn tìm kiếm không tồn tại.</p>
+        </div>
+      } />
     </Routes>
   );
-}
-
-function EntryPoint() {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const setSession = useSessionStore((state) => state.setSession);
-  const tableId = searchParams.get('tableId');
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (tableId) {
-      guestApi.startSession(tableId)
-        .then((res) => {
-          setSession(tableId, res.data.id);
-          navigate('/menu');
-        })
-        .catch(err => {
-          console.error(err);
-          setError("Không thể khởi tạo phiên làm việc. Vui lòng kiểm tra lại mã QR hoặc Backend.");
-        });
-    }
-  }, [tableId, navigate, setSession]);
-
-  // Nếu không có tableId trên URL
-  if (!tableId) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen p-6 text-center">
-        <h1 className="text-2xl font-bold text-red-600">Lỗi: Không tìm thấy bàn</h1>
-        <p className="mt-2 text-gray-600">Vui lòng quét mã QR tại bàn để xem menu và đặt món.</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return <div className="p-10 text-center text-red-500 font-bold">{error}</div>;
-  }
-
-  return <div className="flex items-center justify-center h-screen">Đang xác thực bàn...</div>;
 }
 
 export default App;
