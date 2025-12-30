@@ -1,10 +1,34 @@
 import { Request, Response, NextFunction } from "express";
-// ...existing code...
-export function authMiddleware(
+import { verifyAccessToken } from "../../shared/utils/token";
+import { Role } from "@prisma/client";
+
+export const authMiddleware = (
   req: Request,
   res: Response,
   next: NextFunction
-) {
-  // Placeholder for auth middleware
-  next();
-}
+) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) {
+    res.status(401).json({ message: "No token provided" });
+    return;
+  }
+
+  try {
+    const decoded = verifyAccessToken(token) as any;
+    req.user = { userId: decoded.userId, role: decoded.role };
+    next();
+  } catch (err) {
+    res.status(403).json({ message: "Invalid token" });
+  }
+};
+
+export const roleGuard =
+  (roles: Role[]) => (req: Request, res: Response, next: NextFunction) => {
+    // Ép kiểu req.user thành any để truy cập thuộc tính .role
+    const user = req.user as any;
+    if (!user || !roles.includes(user.role)) {
+      res.status(403).json({ message: "Forbidden" });
+      return;
+    }
+    next();
+  };

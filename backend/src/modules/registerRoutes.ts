@@ -1,7 +1,10 @@
-import { Express } from "express";
-import authRouter from "./auth/auth.routes";
+import { Router } from "express";
+import authRoutes from "./auth/auth.routes";
 
-export function registerRoutes(app: Express) {
-  app.use("/api/auth", authRouter);
-  // Add other module routers here
-}
+const router = Router();
+
+// Gắn route Auth vào đường dẫn /auth
+// API sẽ là: /api/v1/auth/login, /api/v1/auth/register...
+router.use("/auth", authRoutes);
+
+export default router;

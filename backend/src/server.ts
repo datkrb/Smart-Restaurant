@@ -1,26 +1,15 @@
-import express from "express";
-import cors from "cors";
+// src/server.ts
 import dotenv from "dotenv";
-
-import guestRoutes from "./routes/guest.routes";
-import adminRoutes from "./routes/admin.routes";
+import { server } from "./app"; // IMPORT SERVER TỪ APP.TS ĐỂ CÓ ROUTE VÀ SOCKET.IO
 
 dotenv.config();
 
-const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors({
-  origin: "http://localhost:5173",
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-  credentials: true
-}));
+// XÓA BỎ DÒNG: const app = express();
+// VÌ NÓ TẠO RA MỘT APP MỚI TRỐNG RỖNG
 
-app.use(express.json()); 
-
-app.use("/api/guest", guestRoutes);
-app.use("/api/admin", adminRoutes);
-
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+server.listen(PORT, () => {
+  console.log(`🚀 Server is running on http://localhost:${PORT}`);
+  console.log(`📡 API Register: http://localhost:${PORT}/api/v1/auth/register`);
 });
