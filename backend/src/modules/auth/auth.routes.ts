@@ -1,5 +1,15 @@
 import { Router } from "express";
-// ...existing code...
+import * as authController from "./auth.controller";
+import { authMiddleware } from "./auth.middleware";
+
 const router = Router();
-// Placeholder for auth routes
+
+router.post("/register", authController.register);
+router.post("/login", authController.login);
+router.post("/refresh", authController.refreshToken);
+router.post("/logout", authMiddleware, authController.logout);
+router.post("/verify-email", authController.verifyEmail);
+router.post("/forgot-password", authController.forgotPassword);
+router.post("/reset-password", authController.resetPassword);
+
 export default router;

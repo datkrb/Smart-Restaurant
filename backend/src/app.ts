@@ -6,7 +6,9 @@ import passport from "passport";
 import cors from "cors";
 import { json, urlencoded } from "body-parser";
 import { errorHandler } from "./shared/middlewares/errorHandler";
-import { registerRoutes } from "./modules/registerRoutes";
+import router from "./modules/registerRoutes";
+import guestRoutes from "./routes/guest.routes";
+import adminRoutes from "./routes/admin.routes";
 
 const app = express();
 const server = http.createServer(app);
@@ -25,7 +27,9 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-registerRoutes(app);
+app.use("/api/v1", router);
+app.use("/api/guest", guestRoutes); // Đưa về chung một mối
+app.use("/api/admin", adminRoutes);
 
 app.use(errorHandler);
 

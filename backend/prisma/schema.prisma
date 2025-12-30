@@ -3,7 +3,9 @@
 // Prisma configuration
 // =========================
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // Thêm các target để Prisma tải đủ các file binary cần thiết
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -71,6 +73,11 @@ model User {
   isActive   Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  refreshToken         String?   // Lưu Refresh Token
+  isVerified           Boolean   @default(false) // Đã xác thực email chưa?
+  verificationToken    String?   // Token gửi qua email để active
+  forgotPasswordToken  String?   // Token dùng để reset pass
 
   orders     Order[]
 }
