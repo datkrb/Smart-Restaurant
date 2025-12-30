@@ -24,7 +24,6 @@ export const authMiddleware = (
 
 export const roleGuard =
   (roles: Role[]) => (req: Request, res: Response, next: NextFunction) => {
-    // Ép kiểu req.user thành any để truy cập thuộc tính .role
     const user = req.user as any;
     if (!user || !roles.includes(user.role)) {
       res.status(403).json({ message: "Forbidden" });
