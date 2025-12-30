@@ -5,7 +5,6 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from "../../shared/utils/token";
-import e from "express";
 import crypto from "crypto";
 
 const prisma = new PrismaClient();
