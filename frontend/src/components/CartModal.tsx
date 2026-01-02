@@ -76,7 +76,7 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
             </div>
             
             <button 
-              onClick={handleOrder} // <--- ĐÃ THÊM SỰ KIỆN Ở ĐÂY
+              onClick={handleOrder} 
               disabled={isOrdering}
               className={`w-full py-4 rounded-xl font-bold text-white transition-all ${
                 isOrdering ? 'bg-gray-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700 active:scale-95'
