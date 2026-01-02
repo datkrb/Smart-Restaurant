@@ -14,7 +14,7 @@ import AdminTablePage from './pages/admin/AdminTablePage';
 import AdminCategoryPage from './pages/admin/AdminCategoryPage';
 
 import WaiterPage from './pages/waiter/WaiterPage';
-import KitchenPage from './pages/kithchen/KitchenPage';
+import KitchenPage from './pages/kitchen/KitchenPage';
 
 // Placeholder cho các trang chưa tạo (để tránh lỗi import)
 const OrderManagement = () => <div className="p-6 text-2xl font-bold">Quản lý Đơn hàng (Phase 4)</div>;
