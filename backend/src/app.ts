@@ -1,4 +1,5 @@
 import express from "express";
+import path from "path";
 import http from "http";
 import { Server as SocketIOServer } from "socket.io";
 import session from "express-session";
@@ -26,6 +27,9 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Phục vụ thư mục ảnh tĩnh để Frontend có thể hiển thị ảnh
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use("/api/v1", router);
 app.use("/api/guest", guestRoutes); // Đưa về chung một mối
