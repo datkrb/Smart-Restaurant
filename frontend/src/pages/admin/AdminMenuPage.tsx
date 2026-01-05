@@ -4,7 +4,7 @@ import { MenuItem, Category } from '../../types';
 import PhotoManager from '../../modules/admin/PhotoManager';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import toast from 'react-hot-toast';
+import { ui } from '../../utils/swalHelper';
 
 const MySwal = withReactContent(Swal);
 
@@ -57,21 +57,21 @@ export default function AdminMenuPage() {
   };
 
   const handleDeleteItem = async (itemId: string) => {
-    MySwal.fire({
-      title: <p className="text-xl font-bold">Xóa món ăn?</p>,
-      html: <p className="text-sm">Hành động này sẽ ẩn món ăn khỏi thực đơn của khách.</p>,
-      icon: 'error',
-      showCancelButton: true,
-      confirmButtonText: 'Xác nhận xóa',
-      confirmButtonColor: '#dc2626', // Màu đỏ (red-600)
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        await axiosClient.delete(`/admin/menu-items/${itemId}`);
-        toast.success("Đã xóa món ăn!");
-        fetchData();
-      }
-    });
-  };
+  const result = await ui.confirmDelete(
+    "Gỡ bỏ món ăn?",
+    "Món ăn sẽ không hiển thị trên thực đơn khách hàng nhưng vẫn lưu trong lịch sử báo cáo."
+  );
+
+  if (result.isConfirmed) {
+    try {
+      await axiosClient.delete(`/admin/menu-items/${itemId}`);
+      ui.alertSuccess("Đã cập nhật trạng thái món ăn");
+      fetchData(); // Tải lại danh sách
+    } catch (err) {
+      ui.alertError("Lỗi hệ thống");
+    }
+  }
+};
 
   return (
     <div>
