@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import axiosClient from '../../api/axiosClient';
 import { MenuItem, Category } from '../../types';
+import PhotoManager from '../../modules/admin/PhotoManager';
 
 export default function AdminMenuPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]); // Để hiển thị trong select box
-  
+
+  // Quản lý trạng thái món đang chỉnh sửa
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+
   // State cho Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newItem, setNewItem] = useState({
@@ -44,7 +48,7 @@ export default function AdminMenuPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Quản lý thực đơn</h1>
-        <button 
+        <button
           onClick={() => setIsModalOpen(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
         >
@@ -56,6 +60,7 @@ export default function AdminMenuPage() {
         <table className="w-full text-left">
           <thead className="bg-gray-50 border-b">
             <tr>
+              <th className="p-4">Ảnh</th>
               <th className="p-4">Tên món</th>
               <th className="p-4">Danh mục</th>
               <th className="p-4">Giá</th>
@@ -65,13 +70,30 @@ export default function AdminMenuPage() {
           <tbody>
             {items.map(item => (
               <tr key={item.id} className="border-b hover:bg-gray-50">
+                <td className="p-4">
+                  <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden border border-gray-200 flex items-center justify-center">
+                    {/* Sử dụng optional chaining ?. để an toàn */}
+                    {item.photos?.some(p => p.isPrimary) ? (
+                      <img
+                        src={item.photos.find(p => p.isPrimary)?.url}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-[10px] text-gray-400 font-medium">No Img</span>
+                    )}
+                  </div>
+                </td>
                 <td className="p-4 font-medium">{item.name}</td>
                 <td className="p-4 text-gray-500">{(item as any).category?.name}</td>
                 <td className="p-4 font-bold text-orange-600">{item.price.toLocaleString()}đ</td>
                 <td className="p-4">
-                  <span className={`px-2 py-1 rounded-full text-xs ${item.status === 'AVAILABLE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {item.status}
-                  </span>
+                  <button
+                    onClick={() => setEditingItem(item)} // Mở modal quản lý ảnh/sửa
+                    className="text-blue-600 hover:underline text-sm font-medium"
+                  >
+                    Sửa & Ảnh
+                  </button>
                 </td>
               </tr>
             ))}
@@ -79,37 +101,62 @@ export default function AdminMenuPage() {
         </table>
       </div>
 
+      {/* MODAL CHỈNH SỬA & QUẢN LÝ ẢNH */}
+      {editingItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-bold mb-4">Chỉnh sửa: {editingItem.name}</h2>
+
+            {/* Tích hợp PhotoManager vào đây */}
+            <PhotoManager
+              itemId={editingItem.id}
+              photos={editingItem.photos || []}
+              onRefresh={fetchData}
+            />
+
+            <div className="mt-6">
+              <button
+                onClick={() => setEditingItem(null)}
+                className="w-full bg-gray-200 py-2 rounded-lg font-medium"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL THÊM MÓN */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <form onSubmit={handleAddItem} className="bg-white p-6 rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-bold mb-4">Thêm món ăn mới</h2>
-            
+
             <div className="space-y-3">
-              <input 
+              <input
                 className="w-full border p-2 rounded"
                 placeholder="Tên món"
                 required
-                onChange={e => setNewItem({...newItem, name: e.target.value})}
+                onChange={e => setNewItem({ ...newItem, name: e.target.value })}
               />
-              <input 
+              <input
                 type="number"
                 className="w-full border p-2 rounded"
                 placeholder="Giá (VNĐ)"
                 required
-                onChange={e => setNewItem({...newItem, price: Number(e.target.value)})}
+                onChange={e => setNewItem({ ...newItem, price: Number(e.target.value) })}
               />
-              <textarea 
+              <textarea
                 className="w-full border p-2 rounded"
                 placeholder="Mô tả món ăn..."
                 rows={3}
-                onChange={e => setNewItem({...newItem, description: e.target.value})}
+                onChange={e => setNewItem({ ...newItem, description: e.target.value })}
               />
-              
-              <select 
+
+              <select
                 className="w-full border p-2 rounded"
                 required
-                onChange={e => setNewItem({...newItem, categoryId: e.target.value})}
+                onChange={e => setNewItem({ ...newItem, categoryId: e.target.value })}
                 value={newItem.categoryId}
               >
                 <option value="">-- Chọn Danh Mục --</option>
@@ -119,10 +166,10 @@ export default function AdminMenuPage() {
               </select>
 
               <label className="flex items-center gap-2 mt-2">
-                <input 
+                <input
                   type="checkbox"
                   checked={newItem.isChefRecommended}
-                  onChange={e => setNewItem({...newItem, isChefRecommended: e.target.checked})}
+                  onChange={e => setNewItem({ ...newItem, isChefRecommended: e.target.checked })}
                 />
                 <span>Món gợi ý bởi đầu bếp (Chef's Choice)</span>
               </label>
