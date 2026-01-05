@@ -2,6 +2,11 @@ import React, { useEffect, useState } from 'react';
 import axiosClient from '../../api/axiosClient';
 import { MenuItem, Category } from '../../types';
 import PhotoManager from '../../modules/admin/PhotoManager';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+import toast from 'react-hot-toast';
+
+const MySwal = withReactContent(Swal);
 
 export default function AdminMenuPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
@@ -25,8 +30,15 @@ export default function AdminMenuPage() {
       axiosClient.get('/admin/menu-items'),
       axiosClient.get('/admin/categories')
     ]);
-    setItems(itemsRes.data);
+
+    const updatedItems = itemsRes.data;
+    setItems(updatedItems);
     setCategories(catsRes.data);
+
+    if (editingItem) {
+      const freshItem = updatedItems.find((i: MenuItem) => i.id === editingItem.id);
+      if (freshItem) setEditingItem(freshItem);
+    }
   };
 
   useEffect(() => {
@@ -44,13 +56,30 @@ export default function AdminMenuPage() {
     }
   };
 
+  const handleDeleteItem = async (itemId: string) => {
+    MySwal.fire({
+      title: <p className="text-xl font-bold">Xóa món ăn?</p>,
+      html: <p className="text-sm">Hành động này sẽ ẩn món ăn khỏi thực đơn của khách.</p>,
+      icon: 'error',
+      showCancelButton: true,
+      confirmButtonText: 'Xác nhận xóa',
+      confirmButtonColor: '#dc2626', // Màu đỏ (red-600)
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        await axiosClient.delete(`/admin/menu-items/${itemId}`);
+        toast.success("Đã xóa món ăn!");
+        fetchData();
+      }
+    });
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Quản lý thực đơn</h1>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 cursor-pointer"
         >
           + Thêm món mới
         </button>
@@ -90,7 +119,7 @@ export default function AdminMenuPage() {
                 <td className="p-4">
                   <button
                     onClick={() => setEditingItem(item)} // Mở modal quản lý ảnh/sửa
-                    className="text-blue-600 hover:underline text-sm font-medium"
+                    className="text-blue-600 hover:underline text-sm font-medium cursor-pointer"
                   >
                     Sửa & Ảnh
                   </button>
@@ -107,7 +136,6 @@ export default function AdminMenuPage() {
           <div className="bg-white p-6 rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-bold mb-4">Chỉnh sửa: {editingItem.name}</h2>
 
-            {/* Tích hợp PhotoManager vào đây */}
             <PhotoManager
               itemId={editingItem.id}
               photos={editingItem.photos || []}
@@ -117,7 +145,7 @@ export default function AdminMenuPage() {
             <div className="mt-6">
               <button
                 onClick={() => setEditingItem(null)}
-                className="w-full bg-gray-200 py-2 rounded-lg font-medium"
+                className="w-full bg-gray-200 py-2 rounded-lg font-medium cursor-pointer"
               >
                 Đóng
               </button>

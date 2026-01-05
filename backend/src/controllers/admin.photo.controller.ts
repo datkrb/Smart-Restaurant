@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import fs from "fs";
+import path from "path";
 
 const prisma = new PrismaClient();
 
@@ -13,7 +15,7 @@ export const uploadPhotos = async (req: Request, res: Response) => {
     // Lưu thông tin từng ảnh vào DB
     const photoData = files.map(file => ({
       menuItemId: itemId,
-      url: `/uploads/${file.filename}`,
+      url: `http://localhost:4000/uploads/${file.filename}`,
       isPrimary: false
     }));
 
@@ -42,4 +44,31 @@ export const setPrimaryPhoto = async (req: Request, res: Response) => {
   ]);
   
   res.json({ message: "Đã thiết lập ảnh chính" });
+};
+
+export const deletePhoto = async (req: Request, res: Response) => {
+  try {
+    const { photoId } = req.params;
+
+    // 1. Tìm thông tin ảnh trước khi xóa trong DB
+    const photo = await prisma.menuItemPhoto.findUnique({ where: { id: photoId } });
+    if (!photo) return res.status(404).json({ error: "Không tìm thấy ảnh" });
+
+    // 2. Xóa bản ghi trong Database
+    await prisma.menuItemPhoto.delete({ where: { id: photoId } });
+
+    // 3. Xóa file vật lý trong thư mục uploads
+    // Lấy tên file từ URL (VD: http://.../uploads/123.jpg -> 123.jpg)
+    const fileName = photo.url.split('/').pop();
+    if (fileName) {
+      const filePath = path.join(__dirname, "../../uploads", fileName);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath); // Xóa file khỏi ổ đĩa
+      }
+    }
+
+    res.json({ message: "Đã xóa ảnh thành công" });
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi khi xóa ảnh" });
+  }
 };

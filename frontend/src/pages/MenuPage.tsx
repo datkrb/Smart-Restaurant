@@ -42,9 +42,19 @@ export default function MenuPage() {
                   onClick={() => setSelectedItem(item)}
                   className="bg-white p-3 rounded-xl shadow-sm flex gap-3 cursor-pointer active:scale-95 transition-transform"
                 >
-                  {/* Ảnh món ăn (nếu có) */}
-                  <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center text-xs text-gray-400">
-                    No Image
+                  <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
+                    {item.photos && item.photos.length > 0 ? (
+                      <img
+                        // Tìm ảnh Primary, nếu không thấy thì lấy ảnh đầu tiên
+                        src={item.photos.find((p: any) => p.isPrimary)?.url || item.photos[0].url}
+                        className="w-full h-full object-cover"
+                        alt={item.name}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400">
+                        No Image
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex-1">
@@ -75,16 +85,16 @@ export default function MenuPage() {
       )}
 
       {/* Nút Giỏ hàng nổi */}
-      <button 
-        onClick={() => setIsCartOpen(true)} 
-        className="fixed bottom-6 left-4 right-4 bg-orange-600 text-white p-4 rounded-2xl shadow-xl font-bold flex justify-between items-center"
+      <button
+        onClick={() => setIsCartOpen(true)}
+        className="fixed bottom-6 left-4 right-4 bg-orange-600 text-white p-4 rounded-2xl shadow-xl font-bold flex justify-between items-center cursor-pointer"
       >
         <span>Xem giỏ hàng</span>
       </button>
 
-      <CartModal 
-        isOpen={isCartOpen} 
-        onClose={() => setIsCartOpen(false)} 
+      <CartModal
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
       />
     </div>
   );
