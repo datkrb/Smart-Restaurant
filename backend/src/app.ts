@@ -13,8 +13,10 @@ import adminRoutes from "./routes/admin.routes";
 
 const app = express();
 const server = http.createServer(app);
+// Socket.IO được gắn vào HTTP server để hỗ trợ realtime (websockets).
 const io = new SocketIOServer(server, { cors: { origin: "*" } });
 
+// Middleware 
 app.use(cors());
 app.use(json());
 app.use(urlencoded({ extended: true }));
@@ -31,6 +33,7 @@ app.use(passport.session());
 // Phục vụ thư mục ảnh tĩnh để Frontend có thể hiển thị ảnh
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
+// Routes
 app.use("/api/v1", router);
 app.use("/api/guest", guestRoutes); // Đưa về chung một mối
 app.use("/api/admin", adminRoutes);

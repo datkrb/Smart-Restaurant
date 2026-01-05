@@ -12,6 +12,13 @@ export interface ModifierGroup {
   options: ModifierOption[];
 }
 
+export interface MenuItemPhoto {
+  id: string;
+  menuItemId: string;
+  url: string;
+  isPrimary: boolean;
+}
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -20,7 +27,7 @@ export interface MenuItem {
   status: 'AVAILABLE' | 'UNAVAILABLE' | 'SOLD_OUT';
   isChefRecommended: boolean;
   modifierGroups: ModifierGroup[];
-  // images: string[]; // Nếu có
+  photos?: MenuItemPhoto[];
 }
 
 export interface Category {
