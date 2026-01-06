@@ -40,40 +40,105 @@ export const startSession = async (req: Request, res: Response) => {
   }
 };
 
-// 2. Lấy Menu (Category -> Items -> Modifiers)
-export const getGuestMenu = async (req: Request, res: Response) => {
+// 2. API lấy danh sách Category (Chỉ để hiển thị thanh lọc)
+export const getCategories = async (req: Request, res: Response) => {
   try {
-    // Chỉ lấy Category đang Active
-    // Trong mỗi Category, chỉ lấy Item đang Available hoặc Sold Out (để hiển thị hết hàng)
-    // Kèm theo Modifier Groups và Options
     const categories = await prisma.category.findMany({
-      where: {
-        // Giả sử chỉ lấy category của nhà hàng đầu tiên hoặc truyền restaurantId
-        // name: { not: "" } // Example condition
-      },
-      include: {
-        menuItems: {
-          where: {
-            status: { in: ["AVAILABLE", "SOLD_OUT"] }, // Rule: Week_MenuManagement.md
-          },
-          include: {
-            modifierGroups: {
-              include: {
-                options: true,
-              },
-            },
-            photos: true
-          },
-        },
-      },
-      orderBy: {
-        // displayOrder: 'asc' 
-        name: "asc",
-      },
+      orderBy: { name: 'asc' }
     });
-
     res.json(categories);
   } catch (error) {
-    res.status(500).json({ error: "Could not load menu" });
+    res.status(500).json({ error: "Lỗi lấy danh mục" });
+  }
+};
+
+// // 3. Lấy Menu (Category -> Items -> Modifiers)
+// export const getGuestMenu = async (req: Request, res: Response) => {
+//   try {
+//     // Chỉ lấy Category đang Active
+//     // Trong mỗi Category, chỉ lấy Item đang Available hoặc Sold Out (để hiển thị hết hàng)
+//     // Kèm theo Modifier Groups và Options
+//     const categories = await prisma.category.findMany({
+//       where: {
+//         // Giả sử chỉ lấy category của nhà hàng đầu tiên hoặc truyền restaurantId
+//         // name: { not: "" } // Example condition
+//       },
+//       include: {
+//         menuItems: {
+//           where: {
+//             status: { in: ["AVAILABLE", "SOLD_OUT"] }, // Rule: Week_MenuManagement.md
+//           },
+//           include: {
+//             modifierGroups: {
+//               include: {
+//                 options: true,
+//               },
+//             },
+//             photos: true
+//           },
+//         },
+//       },
+//       orderBy: {
+//         // displayOrder: 'asc' 
+//         name: "asc",
+//       },
+//     });
+
+//     res.json(categories);
+//   } catch (error) {
+//     res.status(500).json({ error: "Could not load menu" });
+//   }
+// };
+
+// 3. API lấy món ăn nâng cao (Search, Filter, Sort, Pagination)
+export const getMenuItems = async (req: Request, res: Response) => {
+  try {
+    const { page = 1, limit = 10, search, categoryId, isChefRecommended } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    // Xây dựng điều kiện lọc
+    const where: any = {
+      status: { in: ["AVAILABLE", "SOLD_OUT"] } // Lấy cả món hết hàng để khách biết
+    };
+
+    if (search) {
+      where.name = { contains: String(search), mode: 'insensitive' };
+    }
+
+    if (categoryId && categoryId !== 'all') {
+      where.categoryId = String(categoryId);
+    }
+
+    if (isChefRecommended === 'true') {
+      where.isChefRecommended = true;
+    }
+
+    // Query Database
+    const items = await prisma.menuItem.findMany({
+      where,
+      take: Number(limit),
+      skip,
+      include: {
+        photos: true,
+        modifierGroups: {
+          include: { options: true }
+        }
+      },
+      orderBy: [
+        // Ưu tiên Chef choice lên đầu
+        { isChefRecommended: 'desc' },
+        { createdAt: 'desc' }
+      ]
+    });
+
+    // Trả về kèm thông tin phân trang
+    res.json({
+      data: items,
+      hasMore: items.length === Number(limit)
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Lỗi lấy thực đơn" });
   }
 };
