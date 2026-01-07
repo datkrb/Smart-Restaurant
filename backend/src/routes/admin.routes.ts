@@ -28,6 +28,7 @@ router.delete("/photos/:photoId", deletePhoto);
 // --- TABLE ROUTES ---
 router.get("/tables", TableController.getTables);
 router.post("/tables", TableController.createTable);
+router.put("/tables/:id", TableController.updateTable);
 
 // --- ORDER ROUTES ---
 router.get("/orders", getOrders);
