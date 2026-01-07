@@ -62,6 +62,7 @@ export const getGuestMenu = async (req: Request, res: Response) => {
                 options: true,
               },
             },
+            photos: true
           },
         },
       },

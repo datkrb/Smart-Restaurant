@@ -70,6 +70,7 @@ export const createOrder = async (req: Request, res: Response) => {
         where: { id: order.id },
         data: {
           totalAmount: { increment: orderTotalDelta },
+          status: "RECEIVED",
         },
       });
     });
