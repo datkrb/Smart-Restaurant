@@ -22,10 +22,14 @@ interface Order {
 
 type TabType = 'NEW' | 'READY';
 
+import { useSocketStore } from '../../store/useSocketStore';
+import { toast } from 'react-hot-toast';
+
 export default function WaiterPage() {
   const [activeTab, setActiveTab] = useState<TabType>('NEW');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
+  const socket = useSocketStore(state => state.socket);
 
   // Hàm gọi API lấy danh sách đơn hàng tùy theo Tab
   const fetchOrders = async () => {
@@ -70,9 +74,34 @@ export default function WaiterPage() {
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 15000);
-    return () => clearInterval(interval);
-  }, [activeTab]);
+
+    if (socket) {
+      // Nhận thông báo đơn mới
+      socket.on('new_order', (newOrder: Order) => {
+        if (activeTab === 'NEW') {
+          setOrders(prev => [newOrder, ...prev]);
+        }
+        toast.success(`Có đơn mới từ ${newOrder.tableSession.table.name}!`, { icon: '🔔' });
+      });
+
+      // Nhận thông báo bếp đã nấu xong
+      socket.on('order_status_updated', (updatedOrder: Order) => {
+        if (updatedOrder.status === 'READY') {
+          toast.success(`Món bàn ${updatedOrder.tableSession.table.name} đã xong!`, { icon: '🛎️', duration: 5000 });
+          if (activeTab === 'READY') {
+            setOrders(prev => [updatedOrder, ...prev]);
+          }
+        }
+      });
+    }
+
+    const interval = setInterval(fetchOrders, 30000);
+    return () => {
+      clearInterval(interval);
+      socket?.off('new_order');
+      socket?.off('order_status_updated');
+    };
+  }, [activeTab, socket]);
 
   return (
     <div className="p-4 md:p-6 bg-gray-50 min-h-screen">

@@ -65,15 +65,32 @@ export const createOrder = async (req: Request, res: Response) => {
         orderTotalDelta += (item.price + itemModifiersTotal) * item.quantity;
       }
 
-      // 5. Cập nhật tổng tiền của đơn hàng
-      return await tx.order.update({
+      // 5. Cập nhật tổng tiền của đơn hàng và lấy full thông tin
+      const updatedOrder = await tx.order.update({
         where: { id: order.id },
         data: {
           totalAmount: { increment: orderTotalDelta },
           status: "RECEIVED",
         },
+        include: {
+          tableSession: { include: { table: true } },
+          items: {
+            include: {
+              menuItem: true,
+              modifiers: { include: { modifierOption: true } }
+            }
+          }
+        }
       });
+
+      return updatedOrder;
     });
+
+    // 6. Emit event cho Kitchen và Waiter (với full data)
+    const { io } = require("../app");
+    if (io) {
+      io.emit("new_order", result);
+    }
 
     res.status(201).json(result);
   } catch (error) {

@@ -72,8 +72,23 @@ export const markOrderAsServed = async (req: Request, res: Response) => {
 
         const updatedOrder = await prisma.order.update({
             where: { id: orderId },
-            data: { status: "SERVED" }
+            data: { status: "SERVED" },
+            include: {
+                tableSession: { include: { table: true } },
+                items: {
+                    include: {
+                        menuItem: true,
+                        modifiers: { include: { modifierOption: true } }
+                    }
+                }
+            }
         });
+
+        // Realtime notify
+        const { io } = require("../app");
+        if (io) {
+            io.emit("order_status_updated", updatedOrder);
+        }
 
         res.json(updatedOrder);
     } catch (error) {

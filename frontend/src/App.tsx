@@ -18,10 +18,18 @@ import WaiterPage from './pages/waiter/WaiterPage';
 import TableMapPage from './pages/waiter/TableMapPage';
 import KitchenPage from './pages/kitchen/KitchenPage';
 
+import { useSocketStore } from './store/useSocketStore';
+
 // Placeholder cho các trang chưa tạo (để tránh lỗi import)
 const OrderManagement = () => <div className="p-6 text-2xl font-bold">Quản lý Đơn hàng (Phase 4)</div>;
 
 function App() {
+  const connect = useSocketStore(state => state.connect);
+
+  React.useEffect(() => {
+    connect();
+  }, [connect]);
+
   return (
     <>
       <Toaster position="top-right" reverseOrder={false} />

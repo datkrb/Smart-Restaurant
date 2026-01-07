@@ -17,9 +17,13 @@ interface TableWithSession {
     }[];
 }
 
+import { useSocketStore } from '../../store/useSocketStore';
+import { toast } from 'react-hot-toast';
+
 export default function TableMapPage() {
     const [tables, setTables] = useState<TableWithSession[]>([]);
     const [loading, setLoading] = useState(true);
+    const socket = useSocketStore(state => state.socket);
 
     const fetchTables = async () => {
         try {
@@ -35,7 +39,26 @@ export default function TableMapPage() {
 
     useEffect(() => {
         fetchTables();
-    }, []);
+
+        if (socket) {
+            socket.on('order_status_updated', (updatedOrder: any) => {
+                // Tự động reload data khi có thay đổi trạng thái đơn của bàn
+                fetchTables();
+                if (updatedOrder.status === 'READY') {
+                    toast.success(`Món bàn ${updatedOrder.tableSession.table.name} đã sẵn sàng!`, { icon: '🛎️' });
+                }
+            });
+
+            socket.on('new_order', () => {
+                fetchTables();
+            });
+        }
+
+        return () => {
+            socket?.off('order_status_updated');
+            socket?.off('new_order');
+        };
+    }, [socket]);
 
     return (
         <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
