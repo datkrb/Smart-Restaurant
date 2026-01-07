@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 
 // Layouts
 import AdminLayout from './layouts/AdminLayout';
@@ -21,37 +22,40 @@ const OrderManagement = () => <div className="p-6 text-2xl font-bold">Quản lý
 
 function App() {
   return (
-    <Routes>
-      {/* ========================= GUEST ROUTES (Phase 3) ========================= */}
-      {/* Route mặc định để quét mã QR: /?tableId=xxx */}
-      <Route path="/" element={<EntryPoint />} />
-      <Route path="/menu" element={<MenuPage />} />
+    <>
+      <Toaster position="top-right" reverseOrder={false} />
+      <Routes>
+        {/* ========================= GUEST ROUTES (Phase 3) ========================= */}
+        {/* Route mặc định để quét mã QR: /?tableId=xxx */}
+        <Route path="/" element={<EntryPoint />} />
+        <Route path="/menu" element={<MenuPage />} />
 
-      {/* ========================= ADMIN ROUTES (Phase 2) ========================= */}
-      <Route path="/admin" element={<AdminLayout />}>
-        {/* Tự động chuyển hướng /admin về /admin/menu */}
-        <Route index element={<Navigate to="/admin/menu" replace />} />
+        {/* ========================= ADMIN ROUTES (Phase 2) ========================= */}
+        <Route path="/admin" element={<AdminLayout />}>
+          {/* Tự động chuyển hướng /admin về /admin/menu */}
+          <Route index element={<Navigate to="/admin/menu" replace />} />
 
-        <Route path="categories" element={<AdminCategoryPage />} />
-        <Route path="menu" element={<AdminMenuPage />} />
-        <Route path="tables" element={<AdminTablePage />} />
+          <Route path="categories" element={<AdminCategoryPage />} />
+          <Route path="menu" element={<AdminMenuPage />} />
+          <Route path="tables" element={<AdminTablePage />} />
 
-        {/* Route dự phòng cho Phase 4 */}
-        <Route path="orders" element={<OrderManagement />} />
+          {/* Route dự phòng cho Phase 4 */}
+          <Route path="orders" element={<OrderManagement />} />
 
-      </Route>
+        </Route>
 
-      <Route path="/waiter" element={<WaiterPage />} />
-      <Route path="/kitchen" element={<KitchenPage />} />
-      
-      {/* ========================= 404 NOT FOUND ========================= */}
-      <Route path="*" element={
-        <div className="flex flex-col items-center justify-center h-screen">
-          <h1 className="text-4xl font-bold text-gray-800">404</h1>
-          <p className="text-gray-500">Trang bạn tìm kiếm không tồn tại.</p>
-        </div>
-      } />
-    </Routes>
+        <Route path="/waiter" element={<WaiterPage />} />
+        <Route path="/kitchen" element={<KitchenPage />} />
+        
+        {/* ========================= 404 NOT FOUND ========================= */}
+        <Route path="*" element={
+          <div className="flex flex-col items-center justify-center h-screen">
+            <h1 className="text-4xl font-bold text-gray-800">404</h1>
+            <p className="text-gray-500">Trang bạn tìm kiếm không tồn tại.</p>
+          </div>
+        } />
+      </Routes>
+    </>
   );
 }
 

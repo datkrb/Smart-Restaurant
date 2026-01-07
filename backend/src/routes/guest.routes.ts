@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { startSession, getGuestMenu } from "../controllers/guest.controller";
+import { startSession, getCategories, getMenuItems } from "../controllers/guest.controller";
 import { createOrder } from "../controllers/order.controller";
 
 const router = Router();
@@ -7,8 +7,9 @@ const router = Router();
 // POST /api/guest/session -> Gửi { tableId: "..." } để bắt đầu
 router.post("/session", startSession);
 
-// GET /api/guest/menu -> Lấy menu để hiển thị
-router.get("/menu", getGuestMenu);
+// Route cho Menu Page 
+router.get("/categories", getCategories);
+router.get("/menu-items", getMenuItems);
 
 router.post("/orders", createOrder);
 
