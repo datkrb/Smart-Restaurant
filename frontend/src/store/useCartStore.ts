@@ -6,6 +6,7 @@ interface CartState {
   items: CartItem[];
   addToCart: (item: MenuItem, quantity: number, modifiers: { [groupId: string]: ModifierOption[] }) => void;
   removeFromCart: (cartItemId: string) => void;
+  updateQuantity: (cartItemId: string, delta: number) => void;
   clearCart: () => void;
   totalAmount: () => number;
 }
@@ -23,7 +24,7 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     const newItem: CartItem = {
       ...item,
-      cartItemId: Math.random().toString(36).substr(2, 9),
+      cartItemId: Math.random().toString(36).substring(2, 9),
       quantity,
       selectedModifiers: modifiers,
       totalPrice: finalPrice
@@ -34,6 +35,15 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   removeFromCart: (id) => set((state) => ({
     items: state.items.filter((i) => i.cartItemId !== id)
+  })),
+
+  updateQuantity: (id, delta) => set((state) => ({
+    items: state.items
+      .map((item) =>
+        item.cartItemId === id
+          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
+          : item
+      )
   })),
 
   clearCart: () => set({ items: [] }),

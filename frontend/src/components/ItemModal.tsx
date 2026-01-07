@@ -10,6 +10,7 @@ interface Props {
 export default function ItemModal({ item, onClose }: Props) {
   // Lưu các option đã chọn theo groupId
   const [selectedModifiers, setSelectedModifiers] = useState<{ [key: string]: ModifierOption[] }>({});
+  const [quantity, setQuantity] = useState(1);
   const addToCart = useCartStore(state => state.addToCart);
 
   const handleOptionChange = (groupId: string, option: ModifierOption, isRequired: boolean) => {
@@ -36,7 +37,7 @@ export default function ItemModal({ item, onClose }: Props) {
         return;
       }
     }
-    addToCart(item, 1, selectedModifiers);
+    addToCart(item, quantity, selectedModifiers);
     onClose();
   };
 
@@ -56,7 +57,7 @@ export default function ItemModal({ item, onClose }: Props) {
               {group.options.map(opt => (
                 <label key={opt.id} className="flex justify-between items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
                   <div className="flex items-center gap-2">
-                    <input 
+                    <input
                       type={group.required ? "radio" : "checkbox"}
                       name={group.id}
                       checked={!!selectedModifiers[group.id]?.find(o => o.id === opt.id)}
@@ -71,13 +72,33 @@ export default function ItemModal({ item, onClose }: Props) {
           </div>
         ))}
 
-        <button 
+        {/* Quantity Selector */}
+        <div className="flex items-center justify-between mb-6 pb-4 border-b">
+          <span className="font-semibold">Số lượng</span>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setQuantity(q => Math.max(1, q - 1))}
+              className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-xl font-bold hover:bg-gray-50"
+            >
+              -
+            </button>
+            <span className="text-xl font-bold w-6 text-center">{quantity}</span>
+            <button
+              onClick={() => setQuantity(q => q + 1)}
+              className="w-10 h-10 rounded-full border border-orange-200 flex items-center justify-center text-xl font-bold text-orange-600 hover:bg-orange-50"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        <button
           onClick={handleConfirm}
-          className="w-full bg-orange-600 text-white py-3 rounded-lg font-bold"
+          className="w-full bg-orange-600 text-white py-3 rounded-lg font-bold hover:bg-orange-700 active:scale-95 transition-all"
         >
           Thêm vào giỏ hàng
         </button>
-        <button onClick={onClose} className="w-full mt-2 text-gray-500 py-2">Hủy bỏ</button>
+        <button onClick={onClose} className="w-full mt-2 text-gray-500 py-2 hover:text-gray-700">Hủy bỏ</button>
       </div>
     </div>
   );
