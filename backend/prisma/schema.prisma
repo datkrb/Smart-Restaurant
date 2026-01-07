@@ -144,6 +144,7 @@ model MenuItem {
   category              Category @relation(fields: [categoryId], references: [id])
   modifierGroups        ModifierGroup[]
   orderItems            OrderItem[]
+  photos                MenuItemPhoto[]
 }
 
 model ModifierGroup {
@@ -164,6 +165,16 @@ model ModifierOption {
 
   modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id])
   orderItemLinks  OrderItemModifier[]
+}
+
+model MenuItemPhoto {
+  id         String   @id @default(uuid())
+  menuItemId String
+  url        String   // Đường dẫn ảnh (VD: /uploads/abc.jpg)
+  isPrimary  Boolean  @default(false) // Ảnh đại diện chính
+  createdAt  DateTime @default(now())
+
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
 }
 
 //

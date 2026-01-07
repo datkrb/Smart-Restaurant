@@ -4,6 +4,8 @@ import * as CategoryController from "../controllers/admin.category.controller";
 import * as MenuController from "../controllers/admin.menu.controller";
 import * as TableController from "../controllers/admin.table.controller";
 import { getOrders, updateOrderStatus } from "../controllers/admin.order.controller";
+import { upload } from "../middleware/upload";
+import { deletePhoto, setPrimaryPhoto, uploadPhotos } from "../controllers/admin.photo.controller";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -19,6 +21,9 @@ router.get("/menu-items", MenuController.getMenuItems);
 router.post("/menu-items", MenuController.createMenuItem);
 router.put("/menu-items/:id", MenuController.updateMenuItem);
 router.delete("/menu-items/:id", MenuController.deleteMenuItem);
+router.post("/menu-items/:itemId/photos", upload.array("photos", 5), uploadPhotos);
+router.patch("/photos/set-primary", setPrimaryPhoto);
+router.delete("/photos/:photoId", deletePhoto);
 
 // --- TABLE ROUTES ---
 router.get("/tables", TableController.getTables);
