@@ -13,8 +13,8 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
-    const data = await authService.login(email, password);
+    const user = req.user as any;
+    const data = await authService.generateTokensForUser(user);
     res.json(data);
   } catch (error: any) {
     res.status(401).json({ message: error.message });
@@ -35,8 +35,8 @@ export const logout = async (req: Request, res: Response) => {
   try {
     // Ép kiểu req.user thành bất kỳ (any) để bỏ qua kiểm tra nghiêm ngặt của TS tại đây
     const user = req.user as any;
-    if (user && user.userId) {
-      await authService.logout(user.userId);
+    if (user && user.id) {
+      await authService.logout(user.id);
     }
     res.json({ message: "Logged out" });
   } catch (error) {
