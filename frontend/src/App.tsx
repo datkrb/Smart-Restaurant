@@ -15,6 +15,7 @@ import AdminTablePage from './pages/admin/AdminTablePage';
 import AdminCategoryPage from './pages/admin/AdminCategoryPage';
 
 import WaiterPage from './pages/waiter/WaiterPage';
+import TableMapPage from './pages/waiter/TableMapPage';
 import KitchenPage from './pages/kitchen/KitchenPage';
 
 // Placeholder cho các trang chưa tạo (để tránh lỗi import)
@@ -45,8 +46,9 @@ function App() {
         </Route>
 
         <Route path="/waiter" element={<WaiterPage />} />
+        <Route path="/waiter/map" element={<TableMapPage />} />
         <Route path="/kitchen" element={<KitchenPage />} />
-        
+
         {/* ========================= 404 NOT FOUND ========================= */}
         <Route path="*" element={
           <div className="flex flex-col items-center justify-center h-screen">

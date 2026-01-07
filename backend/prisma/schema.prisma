@@ -79,6 +79,7 @@ model User {
   verificationToken    String?   // Token gửi qua email để active
   forgotPasswordToken  String?   // Token dùng để reset pass
 
+  assignedTables Table[]
   orders     Order[]
 }
 
@@ -102,8 +103,10 @@ model Table {
   name         String
   capacity     Int
   isActive     Boolean  @default(true)
+  waiterId     String?
 
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  waiter       User?      @relation(fields: [waiterId], references: [id])
   sessions     TableSession[]
 }
 
