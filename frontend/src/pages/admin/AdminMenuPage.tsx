@@ -31,9 +31,9 @@ export default function AdminMenuPage() {
       axiosClient.get('/admin/categories')
     ]);
 
-    const updatedItems = itemsRes.data;
+    const updatedItems = itemsRes as any;
     setItems(updatedItems);
-    setCategories(catsRes.data);
+    setCategories(catsRes as any);
 
     if (editingItem) {
       const freshItem = updatedItems.find((i: MenuItem) => i.id === editingItem.id);
@@ -57,21 +57,21 @@ export default function AdminMenuPage() {
   };
 
   const handleDeleteItem = async (itemId: string) => {
-  const result = await ui.confirmDelete(
-    "Gỡ bỏ món ăn?",
-    "Món ăn sẽ không hiển thị trên thực đơn khách hàng nhưng vẫn lưu trong lịch sử báo cáo."
-  );
+    const result = await ui.confirmDelete(
+      "Gỡ bỏ món ăn?",
+      "Món ăn sẽ không hiển thị trên thực đơn khách hàng nhưng vẫn lưu trong lịch sử báo cáo."
+    );
 
-  if (result.isConfirmed) {
-    try {
-      await axiosClient.delete(`/admin/menu-items/${itemId}`);
-      ui.alertSuccess("Đã cập nhật trạng thái món ăn");
-      fetchData(); // Tải lại danh sách
-    } catch (err) {
-      ui.alertError("Lỗi hệ thống");
+    if (result.isConfirmed) {
+      try {
+        await axiosClient.delete(`/admin/menu-items/${itemId}`);
+        ui.alertSuccess("Đã cập nhật trạng thái món ăn");
+        fetchData(); // Tải lại danh sách
+      } catch (err) {
+        ui.alertError("Lỗi hệ thống");
+      }
     }
-  }
-};
+  };
 
   return (
     <div>

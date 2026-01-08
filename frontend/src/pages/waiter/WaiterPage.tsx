@@ -36,11 +36,11 @@ export default function WaiterPage() {
     setLoading(true);
     try {
       if (activeTab === 'NEW') {
-        const res = await axiosClient.get('/admin/orders?status=RECEIVED');
-        setOrders(res.data);
+        const res: any = await axiosClient.get('/admin/orders?status=RECEIVED');
+        setOrders(res);
       } else {
-        const res = await waiterApi.getReadyOrders();
-        setOrders(res.data);
+        const res: any = await waiterApi.getReadyOrders();
+        setOrders(res);
       }
     } catch (error) {
       console.error("Lỗi tải đơn hàng:", error);
