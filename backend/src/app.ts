@@ -3,7 +3,7 @@ import path from "path";
 import http from "http";
 import { Server as SocketIOServer } from "socket.io";
 import session from "express-session";
-import passport from "passport";
+import passport from "./shared/config/passport";
 import cors from "cors";
 import { json, urlencoded } from "body-parser";
 import { errorHandler } from "./shared/middlewares/errorHandler";
