@@ -28,8 +28,8 @@ export default function TableMapPage() {
     const fetchTables = async () => {
         try {
             setLoading(true);
-            const res = await waiterApi.getAssignedTables();
-            setTables(res.data);
+            const res: any = await waiterApi.getAssignedTables();
+            setTables(res);
         } catch (error) {
             console.error("Lỗi tải danh sách bàn:", error);
         } finally {

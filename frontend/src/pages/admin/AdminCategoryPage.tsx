@@ -14,7 +14,7 @@ export default function AdminCategoryPage() {
 
   // Hàm load danh sách
   const fetchCategories = () => {
-    axiosClient.get('/admin/categories').then(res => setCategories(res.data));
+    axiosClient.get('/admin/categories').then(res => setCategories(res as any));
   };
 
   useEffect(() => {
@@ -24,13 +24,13 @@ export default function AdminCategoryPage() {
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const RESTAURANT_ID = "37f51c2d-d366-4d01-9e66-1d1a17dbae3b"; 
-      
+      const RESTAURANT_ID = "37f51c2d-d366-4d01-9e66-1d1a17dbae3b";
+
       await axiosClient.post('/admin/categories', {
         name: newCategoryName,
-        restaurantId: RESTAURANT_ID 
+        restaurantId: RESTAURANT_ID
       });
-      
+
       setIsModalOpen(false);
       setNewCategoryName('');
       fetchCategories(); // Load lại sau khi thêm
@@ -43,7 +43,7 @@ export default function AdminCategoryPage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Quản lý danh mục</h1>
-        <button 
+        <button
           onClick={() => setIsModalOpen(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
         >
@@ -71,7 +71,7 @@ export default function AdminCategoryPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <form onSubmit={handleAddCategory} className="bg-white p-6 rounded-xl w-96">
             <h2 className="text-lg font-bold mb-4">Thêm danh mục mới</h2>
-            <input 
+            <input
               className="w-full border p-2 rounded mb-4"
               placeholder="Tên danh mục (VD: Đồ uống)"
               value={newCategoryName}

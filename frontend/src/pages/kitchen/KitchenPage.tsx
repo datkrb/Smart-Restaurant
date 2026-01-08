@@ -58,8 +58,8 @@ const OrderTimer = ({ startTime }: { startTime: string | Date }) => {
 
   return (
     <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full font-black text-sm tabular-nums ${isUrgent ? 'bg-red-500 text-white animate-pulse' :
-        isLately ? 'bg-orange-500 text-white' :
-          'bg-green-500/20 text-green-400 border border-green-500/30'
+      isLately ? 'bg-orange-500 text-white' :
+        'bg-green-500/20 text-green-400 border border-green-500/30'
       }`}>
       <Clock size={14} />
       <span>{minutes < 10 ? `0${minutes}` : minutes}:{seconds < 10 ? `0${seconds}` : seconds}</span>
@@ -103,8 +103,8 @@ export default function KitchenPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await axiosClient.get('/admin/orders?status=PREPARING');
-      const newOrders = res.data;
+      const res: any = await axiosClient.get('/admin/orders?status=PREPARING');
+      const newOrders = res;
 
       setOrders(newOrders);
       setLastOrderCount(newOrders.length);

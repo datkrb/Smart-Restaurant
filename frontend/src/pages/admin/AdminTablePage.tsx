@@ -38,7 +38,7 @@ export default function AdminTablePage() {
   const fetchTables = async () => {
     try {
       const res = await axiosClient.get('/admin/tables');
-      setTables(res.data);
+      setTables(res as any);
     } catch (error) {
       console.error("Lỗi lấy danh sách bàn:", error);
     } finally {
@@ -48,8 +48,9 @@ export default function AdminTablePage() {
 
   const fetchWaiters = async () => {
     try {
-      const res = await axiosClient.get('/v1/users');
-      const staff = res.data.data.filter((u: any) => u.role === 'WAITER');
+      const res: any = await axiosClient.get('/v1/users');
+      // res ở đây đã là response.data từ server
+      const staff = (res.data || res).filter((u: any) => u.role === 'WAITER');
       setWaiters(staff);
     } catch (error) {
       console.error("Lỗi lấy danh sách nhân viên:", error);
