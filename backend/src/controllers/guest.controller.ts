@@ -35,7 +35,7 @@ export const startSession = async (req: Request, res: Response) => {
 
     res.json(session);
   } catch (error) {
-    console.error("LỖI BACKEND CHI TIẾT:", error); 
+    console.error("LỖI BACKEND CHI TIẾT:", error);
     res.status(500).json({ error: "Could not start session" });
   }
 };
@@ -51,44 +51,6 @@ export const getCategories = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Lỗi lấy danh mục" });
   }
 };
-
-// // 3. Lấy Menu (Category -> Items -> Modifiers)
-// export const getGuestMenu = async (req: Request, res: Response) => {
-//   try {
-//     // Chỉ lấy Category đang Active
-//     // Trong mỗi Category, chỉ lấy Item đang Available hoặc Sold Out (để hiển thị hết hàng)
-//     // Kèm theo Modifier Groups và Options
-//     const categories = await prisma.category.findMany({
-//       where: {
-//         // Giả sử chỉ lấy category của nhà hàng đầu tiên hoặc truyền restaurantId
-//         // name: { not: "" } // Example condition
-//       },
-//       include: {
-//         menuItems: {
-//           where: {
-//             status: { in: ["AVAILABLE", "SOLD_OUT"] }, // Rule: Week_MenuManagement.md
-//           },
-//           include: {
-//             modifierGroups: {
-//               include: {
-//                 options: true,
-//               },
-//             },
-//             photos: true
-//           },
-//         },
-//       },
-//       orderBy: {
-//         // displayOrder: 'asc' 
-//         name: "asc",
-//       },
-//     });
-
-//     res.json(categories);
-//   } catch (error) {
-//     res.status(500).json({ error: "Could not load menu" });
-//   }
-// };
 
 // 3. API lấy món ăn nâng cao (Search, Filter, Sort, Pagination)
 export const getMenuItems = async (req: Request, res: Response) => {
@@ -140,5 +102,63 @@ export const getMenuItems = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Lỗi lấy thực đơn" });
+  }
+};
+
+// 4. Lấy chi tiết đơn hàng (Order Tracking)
+export const getOrderDetails = async (req: Request, res: Response) => {
+  try {
+    const { tableSessionId } = req.params;
+
+    const order = await prisma.order.findUnique({
+      where: { tableSessionId },
+      include: {
+        items: {
+          include: {
+            menuItem: true,
+            modifiers: { include: { modifierOption: true } }
+          }
+        },
+        tableSession: {
+          include: { table: true }
+        }
+      }
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    res.json(order);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Could not get order details" });
+  }
+};
+
+// 5. Yêu cầu thanh toán
+export const requestBill = async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await prisma.order.update({
+      where: { id: orderId },
+      data: { billRequested: true }
+    });
+
+    // Emit socket event to notify waiter
+    try {
+      const { io } = require("../app");
+      if (io) {
+        io.emit("bill_requested", order);
+      }
+    } catch (e) {
+      console.error("Socket emit error:", e);
+    }
+
+    res.json(order);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Could not request bill" });
   }
 };

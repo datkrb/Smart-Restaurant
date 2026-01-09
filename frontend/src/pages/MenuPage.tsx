@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion'; // Animation library
 import { Search, ChefHat, ShoppingBag, FilterX } from 'lucide-react'; // Icons
 
@@ -108,14 +108,20 @@ export default function MenuPage() {
         <div className="p-4 pb-2 space-y-3">
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-black text-gray-800 tracking-tight">Smart<span className="text-orange-600">Food</span></h1>
-            {/* Nút lọc Chef */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setIsChefFilter(!isChefFilter)}
-              className={`p-2 rounded-full border transition-colors ${isChefFilter ? 'bg-orange-100 border-orange-500 text-orange-600 shadow-inner' : 'bg-gray-50 border-gray-200 text-gray-400'}`}
-            >
-              <ChefHat size={20} strokeWidth={isChefFilter ? 2.5 : 2} />
-            </motion.button>
+
+            <div className="flex gap-2">
+              <Link to="/tracking" className="p-2 rounded-full bg-gray-50 border border-gray-200 text-gray-400">
+                <ShoppingBag size={20} />
+              </Link>
+              {/* Nút lọc Chef */}
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setIsChefFilter(!isChefFilter)}
+                className={`p-2 rounded-full border transition-colors ${isChefFilter ? 'bg-orange-100 border-orange-500 text-orange-600 shadow-inner' : 'bg-gray-50 border-gray-200 text-gray-400'}`}
+              >
+                <ChefHat size={20} strokeWidth={isChefFilter ? 2.5 : 2} />
+              </motion.button>
+            </div>
           </div>
 
           <div className="relative">
