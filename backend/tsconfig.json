@@ -5,15 +5,21 @@
     "moduleResolution": "NodeNext",
     "outDir": "dist",
     "rootDir": "src",
-
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-
     "sourceMap": true,
-
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ]
   },
-  "include": ["src/**/*.ts", "src/types/**/*.d.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*.ts",
+    "src/types/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

@@ -5,7 +5,7 @@ export default function CategoryPage() {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    axiosClient.get('/admin/categories').then(res => setCategories(res.data));
+    axiosClient.get('/admin/categories').then(res => setCategories(res as any));
   }, []);
 
   return (
