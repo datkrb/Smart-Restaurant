@@ -9,6 +9,9 @@ import AdminLayout from './layouts/AdminLayout';
 import EntryPoint from './pages/EntryPoint';
 import MenuPage from './pages/MenuPage';
 
+// Auth Pages
+import LoginPage from './pages/auth/LoginPage';
+
 // Admin Pages (Phase 2)
 import AdminMenuPage from './pages/admin/AdminMenuPage';
 import AdminTablePage from './pages/admin/AdminTablePage';
@@ -29,6 +32,9 @@ function App() {
         {/* Route mặc định để quét mã QR: /?tableId=xxx */}
         <Route path="/" element={<EntryPoint />} />
         <Route path="/menu" element={<MenuPage />} />
+
+        {/* ========================= AUTH ROUTES ========================= */}
+        <Route path="/login" element={<LoginPage />} />
 
         {/* ========================= ADMIN ROUTES (Phase 2) ========================= */}
         <Route path="/admin" element={<AdminLayout />}>
@@ -58,5 +64,6 @@ function App() {
     </>
   );
 }
+
 
 export default App;
