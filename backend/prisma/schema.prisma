@@ -81,6 +81,7 @@ model User {
 
   assignedTables Table[]
   orders     Order[]
+  reviews    Review[]
 }
 
 //
@@ -148,6 +149,7 @@ model MenuItem {
   modifierGroups        ModifierGroup[]
   orderItems            OrderItem[]
   photos                MenuItemPhoto[]
+  reviews               Review[]
 }
 
 model ModifierGroup {
@@ -178,6 +180,19 @@ model MenuItemPhoto {
   createdAt  DateTime @default(now())
 
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  menuItemId String
+  userId     String?
+  rating     Int      @default(5)
+  comment    String?
+  customerName String? // Cho trường hợp khách vãng lai không login nhưng muốn để lại tên
+  createdAt  DateTime @default(now())
+
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id])
 }
 
 //

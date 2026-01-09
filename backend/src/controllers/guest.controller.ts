@@ -175,3 +175,63 @@ export const requestBill = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Could not request bill" });
   }
 };
+
+// 6. Lấy danh sách review của món ăn (Phân trang)
+export const getMenuItemReviews = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { page = 1, limit = 5 } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const reviews = await prisma.review.findMany({
+      where: { menuItemId: id },
+      take: Number(limit),
+      skip,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: { fullName: true, avatarUrl: true }
+        }
+      }
+    });
+
+    const total = await prisma.review.count({ where: { menuItemId: id } });
+
+    res.json({
+      data: reviews,
+      total,
+      hasMore: (skip + reviews.length) < total
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Lỗi lấy đánh giá" });
+  }
+};
+
+// 7. Tạo review mới
+export const createMenuItemReview = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rating, comment, customerName } = req.body;
+    const user = req.user as any;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: "Rating must be between 1 and 5" });
+    }
+
+    const review = await prisma.review.create({
+      data: {
+        menuItemId: id,
+        userId: user?.id || null,
+        rating: Number(rating),
+        comment,
+        customerName: user ? user.fullName : (customerName || "Khách vãng lai")
+      }
+    });
+
+    res.status(201).json(review);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Lỗi gửi đánh giá" });
+  }
+};
