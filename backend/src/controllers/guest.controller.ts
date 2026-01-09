@@ -55,7 +55,7 @@ export const getCategories = async (req: Request, res: Response) => {
 // 3. API lấy món ăn nâng cao (Search, Filter, Sort, Pagination)
 export const getMenuItems = async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 10, search, categoryId, isChefRecommended } = req.query;
+    const { page = 1, limit = 10, search, categoryId, isChefRecommended, sortBy } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
     // Xây dựng điều kiện lọc
@@ -75,6 +75,20 @@ export const getMenuItems = async (req: Request, res: Response) => {
       where.isChefRecommended = true;
     }
 
+    // Determine Sort Order
+    let orderBy: any = [
+      { isChefRecommended: 'desc' },
+      { createdAt: 'desc' }
+    ];
+
+    if (sortBy === 'popular') {
+      orderBy = {
+        orderItems: {
+          _count: 'desc'
+        }
+      };
+    }
+
     // Query Database
     const items = await prisma.menuItem.findMany({
       where,
@@ -84,13 +98,12 @@ export const getMenuItems = async (req: Request, res: Response) => {
         photos: true,
         modifierGroups: {
           include: { options: true }
+        },
+        _count: {
+          select: { orderItems: true } // Calculate popular count if needed for debugging, optional
         }
       },
-      orderBy: [
-        // Ưu tiên Chef choice lên đầu
-        { isChefRecommended: 'desc' },
-        { createdAt: 'desc' }
-      ]
+      orderBy: orderBy
     });
 
     // Trả về kèm thông tin phân trang

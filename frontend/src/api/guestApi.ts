@@ -16,6 +16,7 @@ export const guestApi = {
     search?: string;
     categoryId?: string;
     isChefRecommended?: boolean;
+    sortBy?: string;
   }) => axiosClient.get('/guest/menu-items', { params }),
 
   getOrderDetails: (tableSessionId: string) => axiosClient.get(`/guest/orders/${tableSessionId}`),
