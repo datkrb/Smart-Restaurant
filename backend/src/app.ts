@@ -10,11 +10,17 @@ import { errorHandler } from "./shared/middlewares/errorHandler";
 import router from "./modules/registerRoutes";
 import guestRoutes from "./routes/guest.routes";
 import adminRoutes from "./routes/admin.routes";
+import waiterRoutes from "./routes/waiter.routes";
 
 const app = express();
 const server = http.createServer(app);
 // Socket.IO được gắn vào HTTP server để hỗ trợ realtime (websockets).
-const io = new SocketIOServer(server, { cors: { origin: "*" } });
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
 // Middleware 
 app.use(cors());
@@ -37,6 +43,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/api/v1", router);
 app.use("/api/guest", guestRoutes); // Đưa về chung một mối
 app.use("/api/admin", adminRoutes);
+app.use("/api/waiter", waiterRoutes);
 
 app.use(errorHandler);
 
