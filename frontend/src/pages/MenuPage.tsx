@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion'; // Animation library
-import { Search, ChefHat, ShoppingBag, FilterX } from 'lucide-react'; // Icons
+import { Search, ChefHat, ShoppingBag, FilterX, TrendingUp } from 'lucide-react'; // Icons
 
 import { guestApi } from '../api/guestApi';
 import { Category, MenuItem } from '../types';
@@ -22,6 +22,7 @@ export default function MenuPage() {
   const [searchText, setSearchText] = useState(searchParams.get('q') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('cat') || 'all');
   const [isChefFilter, setIsChefFilter] = useState(searchParams.get('chef') === 'true');
+  const [sortBy, setSortBy] = useState<'default' | 'popular'>('default');
 
   // Pagination State
   const [page, setPage] = useState(1);
@@ -55,7 +56,7 @@ export default function MenuPage() {
     setItems([]);
     setPage(1);
     setHasMore(true);
-  }, [debouncedSearch, selectedCategory, isChefFilter, setSearchParams]);
+  }, [debouncedSearch, selectedCategory, isChefFilter, sortBy, setSearchParams]);
 
   // Load Items (Pagination)
   useEffect(() => {
@@ -67,7 +68,8 @@ export default function MenuPage() {
           limit: 10,
           search: debouncedSearch,
           categoryId: selectedCategory === 'all' ? undefined : selectedCategory,
-          isChefRecommended: isChefFilter
+          isChefRecommended: isChefFilter,
+          sortBy
         });
 
         const responseData = res as any;
@@ -82,7 +84,7 @@ export default function MenuPage() {
     };
 
     fetchItems();
-  }, [page, debouncedSearch, selectedCategory, isChefFilter]);
+  }, [page, debouncedSearch, selectedCategory, isChefFilter, sortBy]);
 
   // --- 3. INFINITE SCROLL OBSERVER ---
   const observer = useRef<IntersectionObserver | null>(null);
@@ -120,6 +122,15 @@ export default function MenuPage() {
                 className={`p-2 rounded-full border transition-colors ${isChefFilter ? 'bg-orange-100 border-orange-500 text-orange-600 shadow-inner' : 'bg-gray-50 border-gray-200 text-gray-400'}`}
               >
                 <ChefHat size={20} strokeWidth={isChefFilter ? 2.5 : 2} />
+              </motion.button>
+
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setSortBy(prev => prev === 'default' ? 'popular' : 'default')}
+                className={`p-2 rounded-full border transition-colors ${sortBy === 'popular' ? 'bg-blue-100 border-blue-500 text-blue-600 shadow-inner' : 'bg-gray-50 border-gray-200 text-gray-400'}`}
+                title="Sắp xếp theo món bán chạy"
+              >
+                <TrendingUp size={20} strokeWidth={sortBy === 'popular' ? 2.5 : 2} />
               </motion.button>
             </div>
           </div>
@@ -217,6 +228,25 @@ export default function MenuPage() {
                   <div>
                     <h3 className="font-bold text-gray-800 line-clamp-1 text-base">{item.name}</h3>
                     <p className="text-xs text-gray-500 line-clamp-2 mt-1 leading-relaxed">{item.description}</p>
+
+                    {/* Size Options Display */}
+                    {(() => {
+                      const sizeGroup = item.modifierGroups?.find(
+                        g => g.name.toLowerCase().includes('size') || g.name.toLowerCase().includes('kích thước')
+                      );
+                      if (sizeGroup && sizeGroup.options.length > 0) {
+                        return (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {sizeGroup.options.map(opt => (
+                              <span key={opt.id} className="text-[10px] uppercase font-bold text-gray-500 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-[4px]">
+                                {opt.name}
+                              </span>
+                            ))}
+                          </div>
+                        )
+                      }
+                      return null;
+                    })()}
                   </div>
                   <div className="flex justify-between items-end mt-2">
                     <span className="text-orange-600 font-extrabold text-lg">{item.price.toLocaleString()}đ</span>
