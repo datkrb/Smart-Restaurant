@@ -13,7 +13,8 @@ import MenuPage from './pages/MenuPage';
 import LoginPage from './pages/auth/LoginPage';
 
 // Admin Pages (Phase 2)
-import AdminMenuPage from './pages/admin/AdminMenuPage';
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import AdminMenuPage from "./pages/admin/AdminMenuPage";
 import AdminTablePage from './pages/admin/AdminTablePage';
 import AdminCategoryPage from './pages/admin/AdminCategoryPage';
 
@@ -38,8 +39,9 @@ function App() {
 
         {/* ========================= ADMIN ROUTES (Phase 2) ========================= */}
         <Route path="/admin" element={<AdminLayout />}>
-          {/* Tự động chuyển hướng /admin về /admin/menu */}
-          <Route index element={<Navigate to="/admin/menu" replace />} />
+          {/* Tự động chuyển hướng /admin về /admin/dashboard */}
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboardPage />} />
 
           <Route path="categories" element={<AdminCategoryPage />} />
           <Route path="menu" element={<AdminMenuPage />} />
