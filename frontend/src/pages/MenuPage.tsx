@@ -217,8 +217,19 @@ export default function MenuPage() {
                   )}
 
                   {item.isChefRecommended && (
-                    <div className="absolute top-0 left-0 bg-red-600/90 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-1 rounded-br-lg shadow-sm">
+                    <div className="absolute top-0 left-0 bg-red-600/90 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-1 rounded-br-lg shadow-sm z-10">
                       Chef's Choice
+                    </div>
+                  )}
+
+                  {item.status === 'SOLD_OUT' && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+                      <span className="bg-gray-800 text-white text-xs font-bold px-2 py-1 rounded shadow-md border border-gray-600">Hết hàng</span>
+                    </div>
+                  )}
+                  {item.status === 'UNAVAILABLE' && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+                      <span className="bg-gray-800 text-white text-xs font-bold px-2 py-1 rounded shadow-md border border-gray-600">Tạm ngưng</span>
                     </div>
                   )}
                 </div>
@@ -301,7 +312,12 @@ export default function MenuPage() {
 
       {/* MODALS */}
       {selectedItem && (
-        <ItemModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+        <ItemModal
+          item={selectedItem}
+          relatedItems={items.filter(i => i.categoryId === selectedItem.categoryId && i.id !== selectedItem.id).slice(0, 4)}
+          onSelectRelated={setSelectedItem}
+          onClose={() => setSelectedItem(null)}
+        />
       )}
       <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>
