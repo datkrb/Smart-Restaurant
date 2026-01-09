@@ -196,6 +196,8 @@ model Order {
   user            User? @relation(fields: [userId], references: [id])
   items           OrderItem[]
   payment         Payment?
+  
+  billRequested   Boolean @default(false)
 }
 
 model OrderItem {

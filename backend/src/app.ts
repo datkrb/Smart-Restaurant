@@ -15,7 +15,12 @@ import waiterRoutes from "./routes/waiter.routes";
 const app = express();
 const server = http.createServer(app);
 // Socket.IO được gắn vào HTTP server để hỗ trợ realtime (websockets).
-const io = new SocketIOServer(server, { cors: { origin: "*" } });
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
 // Middleware 
 app.use(cors());

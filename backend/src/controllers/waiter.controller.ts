@@ -6,10 +6,10 @@ const prisma = new PrismaClient();
 // 1. Lấy danh sách bàn được giao cho Waiter này
 export const getAssignedTables = async (req: Request, res: Response) => {
     try {
-        const waiterId = (req.user as any).userId;
+        const waiterId = (req.user as any)?.userId;
 
         const tables = await prisma.table.findMany({
-            where: { waiterId: waiterId },
+            where: waiterId ? { waiterId } : {},
             include: {
                 sessions: {
                     where: { status: "OPEN" },
@@ -36,15 +36,20 @@ export const getAssignedTables = async (req: Request, res: Response) => {
 // 2. Lấy danh sách đơn hàng đã nấu xong (READY) của các bàn được giao
 export const getReadyOrders = async (req: Request, res: Response) => {
     try {
-        const waiterId = (req.user as any).userId;
+        const waiterId = (req.user as any)?.userId;
+
+        const whereClause: any = {
+            status: "READY",
+        };
+
+        if (waiterId) {
+            whereClause.tableSession = {
+                table: { waiterId: waiterId }
+            };
+        }
 
         const orders = await prisma.order.findMany({
-            where: {
-                status: "READY",
-                tableSession: {
-                    table: { waiterId: waiterId }
-                }
-            },
+            where: whereClause,
             include: {
                 tableSession: {
                     include: { table: true }

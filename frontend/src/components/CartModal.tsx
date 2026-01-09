@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../store/useCartStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { guestApi } from '../api/guestApi';
@@ -7,6 +8,8 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
   const { items, totalAmount, clearCart, updateQuantity, removeFromCart } = useCartStore();
   const sessionId = useSessionStore(state => state.sessionId); // Lấy ID phiên làm việc
   const [isOrdering, setIsOrdering] = useState(false);
+
+  const navigate = useNavigate();
 
   if (!isOpen) return null;
 
@@ -33,6 +36,7 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
       alert("🎉 Đặt món thành công! Nhà bếp sẽ chuẩn bị ngay.");
       clearCart(); // Xóa giỏ hàng sau khi đặt thành công
       onClose();   // Đóng modal
+      navigate('/tracking');
 
     } catch (error) {
       console.error(error);

@@ -8,6 +8,7 @@ import AdminLayout from './layouts/AdminLayout';
 // Guest Pages (Phase 3)
 import EntryPoint from './pages/EntryPoint';
 import MenuPage from './pages/MenuPage';
+import OrderTrackingPage from './pages/guest/OrderTrackingPage';
 
 // Admin Pages (Phase 2)
 import AdminMenuPage from './pages/admin/AdminMenuPage';
@@ -38,6 +39,7 @@ function App() {
         {/* Route mặc định để quét mã QR: /?tableId=xxx */}
         <Route path="/" element={<EntryPoint />} />
         <Route path="/menu" element={<MenuPage />} />
+        <Route path="/tracking" element={<OrderTrackingPage />} />
 
         {/* ========================= ADMIN ROUTES (Phase 2) ========================= */}
         <Route path="/admin" element={<AdminLayout />}>
