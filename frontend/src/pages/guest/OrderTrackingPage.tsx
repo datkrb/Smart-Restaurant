@@ -92,7 +92,7 @@ const OrderTrackingPage = () => {
     return (
         <div className="max-w-md mx-auto bg-gray-50 min-h-screen pb-20">
             {/* Header */}
-            <div className="bg-white p-4 shadow-sm sticky top-0 z-10 flex items-center justify-center relative">
+            <div className="bg-white p-4 shadow-sm sticky top-0 z-30 flex items-center justify-center relative">
                 <Link to="/menu" className="absolute left-4 text-gray-500">
                     &larr; Back
                 </Link>
@@ -144,21 +144,44 @@ const OrderTrackingPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                    {order.items.map((item) => (
-                        <div key={item.id} className="flex justify-between items-start">
-                            <div className="flex-1">
-                                <div className="flex justify-between font-medium text-gray-800">
-                                    <span>{item.menuItem.name} <span className="text-orange-600 ml-1 text-sm font-bold">x{item.quantity}</span></span>
-                                    <span>${(item.price * item.quantity).toFixed(2)}</span>
-                                </div>
-                                {item.modifiers && item.modifiers.length > 0 && (
-                                    <div className="text-xs text-gray-500 mt-1 pl-2 border-l-2 border-gray-200">
-                                        {item.modifiers.map((m: any) => m.modifierOption.name).join(', ')}
+                    {(() => {
+                        const groupedItems = order.items.reduce((acc: any[], item) => {
+                            const modifierString = item.modifiers
+                                ?.map((m: any) => m.modifierOption.name)
+                                .sort()
+                                .join(', ') || '';
+
+                            const existingItem = acc.find(
+                                (i) => i.menuItem.name === item.menuItem.name && i.modifierString === modifierString
+                            );
+
+                            if (existingItem) {
+                                existingItem.quantity += item.quantity;
+                            } else {
+                                acc.push({
+                                    ...item,
+                                    modifierString
+                                });
+                            }
+                            return acc;
+                        }, []);
+
+                        return groupedItems.map((item, idx) => (
+                            <div key={idx} className="flex justify-between items-start">
+                                <div className="flex-1">
+                                    <div className="flex justify-between font-medium text-gray-800">
+                                        <span>{item.menuItem.name} <span className="text-orange-600 ml-1 text-sm font-bold">x{item.quantity}</span></span>
+                                        <span>${(item.price * item.quantity).toFixed(2)}</span>
                                     </div>
-                                )}
+                                    {item.modifierString && (
+                                        <div className="text-xs text-gray-500 mt-1 pl-2 border-l-2 border-gray-200">
+                                            {item.modifierString}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ));
+                    })()}
                 </div>
 
                 <div className="border-t border-dashed pt-3 flex justify-between items-center">

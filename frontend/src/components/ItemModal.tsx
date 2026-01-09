@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { MenuItem, ModifierOption } from '../types';
 import { useCartStore } from '../store/useCartStore';
+import { Star, MessageSquarePlus, ChevronDown } from 'lucide-react';
+import { guestApi } from '../api/guestApi';
 
 interface Props {
   item: MenuItem;
@@ -15,11 +17,67 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
   const [quantity, setQuantity] = useState(1);
   const addToCart = useCartStore(state => state.addToCart);
 
+  // Review States
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewPage, setReviewPage] = useState(1);
+  const [hasMoreReviews, setHasMoreReviews] = useState(false);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+
+  // Submit Review States
+  const [newRating, setNewRating] = useState(5);
+  const [newComment, setNewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+
+  const isLoggedIn = !!localStorage.getItem('authToken') || !!localStorage.getItem('accessToken');
+
   // Reset state when item changes (for related items navigation)
   useEffect(() => {
     setSelectedModifiers({});
     setQuantity(1);
+    setReviews([]);
+    setReviewPage(1);
+    fetchReviews(1);
   }, [item.id]);
+
+  const fetchReviews = async (page: number) => {
+    setLoadingReviews(true);
+    try {
+      const res: any = await guestApi.getReviews(item.id, { page, limit: 5 });
+      setReviews(prev => page === 1 ? res.data : [...prev, ...res.data]);
+      setHasMoreReviews(res.hasMore);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  const handleLoadMoreReviews = () => {
+    const nextPage = reviewPage + 1;
+    setReviewPage(nextPage);
+    fetchReviews(nextPage);
+  };
+
+  const handleSubmitReview = async () => {
+    if (!newComment.trim()) return alert("Vui lòng nhập nội dung đánh giá");
+    setIsSubmittingReview(true);
+    try {
+      await guestApi.createReview(item.id, {
+        rating: newRating,
+        comment: newComment,
+        customerName: !isLoggedIn ? "Khách vãng lai" : undefined
+      });
+      alert("Cảm ơn bạn đã đánh giá!");
+      setNewComment('');
+      setShowReviewForm(false);
+      fetchReviews(1); // Refresh
+    } catch (error) {
+      alert("Lỗi khi gửi đánh giá");
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   const handleOptionChange = (groupId: string, option: ModifierOption, isRequired: boolean) => {
     setSelectedModifiers(prev => {
@@ -68,7 +126,7 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
 
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 bg-white/80 p-2 rounded-full backdrop-blur-sm text-gray-800 hover:bg-white"
+            className="absolute top-3 right-3 bg-white/80 p-2 rounded-full backdrop-blur-sm text-gray-800 hover:bg-white z-10"
           >
             ✕
           </button>
@@ -99,13 +157,13 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
               <div className="space-y-2">
                 {group.options.map(opt => (
                   <label key={opt.id} className={`flex justify-between items-center p-3 border rounded-xl cursor-pointer transition-all ${(selectedModifiers[group.id]?.find(o => o.id === opt.id))
-                      ? 'bg-orange-50 border-orange-500 ring-1 ring-orange-500'
-                      : 'border-gray-200 hover:bg-gray-50'
+                    ? 'bg-orange-50 border-orange-500 ring-1 ring-orange-500'
+                    : 'border-gray-200 hover:bg-gray-50'
                     }`}>
                     <div className="flex items-center gap-3">
                       <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${(selectedModifiers[group.id]?.find(o => o.id === opt.id))
-                          ? 'border-orange-500 bg-orange-500'
-                          : 'border-gray-300'
+                        ? 'border-orange-500 bg-orange-500'
+                        : 'border-gray-300'
                         }`}>
                         {(selectedModifiers[group.id]?.find(o => o.id === opt.id)) && (
                           <div className="w-2 h-2 bg-white rounded-full" />
@@ -160,6 +218,94 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
             </div>
           )}
 
+          {/* REVIEWS SECTION */}
+          <div className="mt-8 border-t border-gray-100 pt-6 px-1">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                <Star className="fill-yellow-400 text-yellow-400" size={20} />
+                <span>Đánh giá</span>
+              </h3>
+              {isLoggedIn && !showReviewForm && (
+                <button
+                  onClick={() => setShowReviewForm(true)}
+                  className="text-orange-600 font-bold text-sm border border-orange-200 px-3 py-1 rounded-full hover:bg-orange-50 transition-colors flex items-center gap-1"
+                >
+                  <MessageSquarePlus size={16} />
+                  <span>Hài lòng?</span>
+                </button>
+              )}
+            </div>
+
+            {/* Add Review Form */}
+            {showReviewForm && (
+              <div className="bg-orange-50/50 p-4 rounded-2xl mb-6 border border-orange-100 animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="flex gap-2 mb-3">
+                  {[1, 2, 3, 4, 5].map(s => (
+                    <button key={s} onClick={() => setNewRating(s)}>
+                      <Star className={`${s <= newRating ? 'fill-orange-400 text-orange-400' : 'text-gray-300'}`} size={24} />
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Bạn thấy món này thế nào? Chia sẻ cảm nhận nhé..."
+                  className="w-full bg-white border border-orange-100 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 min-h-[80px]"
+                />
+                <div className="flex gap-2 mt-3">
+                  <button
+                    disabled={isSubmittingReview}
+                    onClick={handleSubmitReview}
+                    className="flex-1 bg-orange-600 text-white font-bold py-2 rounded-lg text-sm disabled:opacity-50"
+                  >
+                    {isSubmittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+                  </button>
+                  <button
+                    onClick={() => setShowReviewForm(false)}
+                    className="px-4 py-2 text-gray-400 font-bold text-sm"
+                  >Hủy</button>
+                </div>
+              </div>
+            )}
+
+            {/* Review List */}
+            <div className="space-y-6">
+              {reviews.length === 0 && !loadingReviews && (
+                <p className="text-gray-400 text-sm text-center py-6 italic">Chưa có đánh giá nào cho món ăn này.</p>
+              )}
+              {reviews.map(rev => (
+                <div key={rev.id} className="group">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="font-bold text-gray-800 text-sm">
+                      {rev.user?.fullName || rev.customerName || "Khách hàng"}
+                    </span>
+                    <div className="flex gap-0.5">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} size={10} className={`${i < rev.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'}`} />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-gray-600 text-sm leading-relaxed">{rev.comment}</p>
+                  <div className="text-[10px] text-gray-400 mt-1">{new Date(rev.createdAt).toLocaleDateString('vi-VN')}</div>
+                </div>
+              ))}
+
+              {hasMoreReviews && (
+                <button
+                  onClick={handleLoadMoreReviews}
+                  disabled={loadingReviews}
+                  className="w-full py-3 text-orange-600 font-bold text-sm flex items-center justify-center gap-1 hover:bg-orange-50 rounded-xl transition-colors"
+                >
+                  {loadingReviews ? 'Đang tải...' : (
+                    <>
+                      <span>Xem thêm đánh giá</span>
+                      <ChevronDown size={16} />
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Bottom Bar */}
