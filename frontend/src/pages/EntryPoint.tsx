@@ -13,9 +13,9 @@ const EntryPoint = () => {
   useEffect(() => {
     if (tableId) {
       guestApi.startSession(tableId)
-        .then((res) => {
+        .then((res: any) => {
           // Lưu thông tin vào store và chuyển hướng sang menu
-          setSession(tableId, res.data.id);
+          setSession(tableId, res.id);
           navigate('/menu');
         })
         .catch((err) => {

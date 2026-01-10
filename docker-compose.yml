@@ -23,6 +23,7 @@ services:
     command: npm run dev
     volumes:
       - ./backend:/app
+      - /app/node_modules
     ports:
       - "4000:4000"
     environment:
@@ -39,6 +40,7 @@ services:
     build: ./frontend
     volumes:
       - ./frontend:/app
+      - /app/node_modules
     ports:
       - "3000:80"
     depends_on:

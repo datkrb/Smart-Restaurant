@@ -21,6 +21,7 @@ export interface MenuItemPhoto {
 
 export interface MenuItem {
   id: string;
+  categoryId: string;
   name: string;
   price: number;
   description: string;
