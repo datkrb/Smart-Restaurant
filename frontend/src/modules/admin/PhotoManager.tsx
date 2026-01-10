@@ -3,6 +3,7 @@ import axiosClient from '../../api/axiosClient';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import { ui } from '../../utils/swalHelper';
 
 interface Photo {
   id: string;
@@ -38,36 +39,29 @@ export default function PhotoManager({ itemId, photos, onRefresh }: { itemId: st
   };
 
   const handleDelete = async (photoId: string) => {
-    // SweetAlert2
-    MySwal.fire({
-      title: 'Xác nhận xóa?',
-      text: "Bạn sẽ không thể khôi phục lại ảnh này!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ea580c', 
-      cancelButtonColor: '#94a3b8',
-      confirmButtonText: 'Đồng ý, xóa nó!',
-      cancelButtonText: 'Hủy'
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await axiosClient.delete(`/admin/photos/${photoId}`);
-          toast.success("Đã xóa ảnh thành công!");
-          onRefresh();
-        } catch (err) {
-          toast.error("Không thể xóa ảnh lúc này.");
-        }
+    const result = await ui.confirmDelete(
+      "Xóa hình ảnh?", 
+      "Ảnh này sẽ biến mất khỏi thực đơn của khách hàng."
+    );
+
+    if (result.isConfirmed) {
+      try {
+        await axiosClient.delete(`/admin/photos/${photoId}`);
+        ui.alertSuccess("Đã xóa ảnh!");
+        onRefresh();
+      } catch (err) {
+        ui.alertError("Lỗi khi xóa ảnh");
       }
-    });
+    }
   };
 
   const handleSetPrimary = async (photoId: string) => {
     try {
       await axiosClient.patch('/admin/photos/set-primary', { photoId, itemId });
-      toast.success("Đã đổi ảnh chính!", { duration: 2000 });
+      ui.alertSuccess("Đã cập nhật ảnh chính!");
       onRefresh();
     } catch (err) {
-      toast.error("Lỗi khi đổi ảnh chính");
+      ui.alertError("Không thể thay đổi ảnh chính");
     }
   };
 

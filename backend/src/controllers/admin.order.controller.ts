@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 export const getOrders = async (req: Request, res: Response) => {
   try {
     const { status } = req.query;
-    
+
     const whereCondition = status ? { status: status as OrderStatus } : {};
 
     const orders = await prisma.order.findMany({
@@ -41,7 +41,22 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     const updatedOrder = await prisma.order.update({
       where: { id },
       data: { status: status as OrderStatus },
+      include: {
+        tableSession: { include: { table: true } },
+        items: {
+          include: {
+            menuItem: true,
+            modifiers: { include: { modifierOption: true } }
+          }
+        }
+      }
     });
+
+    // Realtime notify
+    const { io } = require("../app");
+    if (io) {
+      io.emit("order_status_updated", updatedOrder);
+    }
 
     res.json(updatedOrder);
   } catch (error) {

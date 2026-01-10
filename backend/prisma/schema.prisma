@@ -79,7 +79,9 @@ model User {
   verificationToken    String?   // Token gửi qua email để active
   forgotPasswordToken  String?   // Token dùng để reset pass
 
+  assignedTables Table[]
   orders     Order[]
+  reviews    Review[]
 }
 
 //
@@ -102,8 +104,10 @@ model Table {
   name         String
   capacity     Int
   isActive     Boolean  @default(true)
+  waiterId     String?
 
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  waiter       User?      @relation(fields: [waiterId], references: [id])
   sessions     TableSession[]
 }
 
@@ -145,6 +149,7 @@ model MenuItem {
   modifierGroups        ModifierGroup[]
   orderItems            OrderItem[]
   photos                MenuItemPhoto[]
+  reviews               Review[]
 }
 
 model ModifierGroup {
@@ -177,6 +182,19 @@ model MenuItemPhoto {
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
 }
 
+model Review {
+  id         String   @id @default(uuid())
+  menuItemId String
+  userId     String?
+  rating     Int      @default(5)
+  comment    String?
+  customerName String? // Cho trường hợp khách vãng lai không login nhưng muốn để lại tên
+  createdAt  DateTime @default(now())
+
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id])
+}
+
 //
 // =========================
 // ORDER
@@ -193,6 +211,8 @@ model Order {
   user            User? @relation(fields: [userId], references: [id])
   items           OrderItem[]
   payment         Payment?
+  
+  billRequested   Boolean @default(false)
 }
 
 model OrderItem {
