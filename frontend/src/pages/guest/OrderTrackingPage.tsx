@@ -91,8 +91,8 @@ const OrderTrackingPage = () => {
 
     return (
         <div className="max-w-md mx-auto bg-gray-50 min-h-screen pb-20">
-            {/* Header */}
-            <div className="bg-white p-4 shadow-sm sticky top-0 z-30 flex items-center justify-center relative">
+            {/* Page Title */}
+            <div className="bg-white p-4 shadow-sm relative flex items-center justify-center">
                 <Link to="/menu" className="absolute left-4 text-gray-500">
                     &larr; Back
                 </Link>

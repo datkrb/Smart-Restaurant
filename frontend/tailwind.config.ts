@@ -17,7 +17,7 @@ export default {
         "input-bg": "#f0f2f4",
       },
       fontFamily: {
-        "display": ["Work Sans", "sans-serif"],
+        "sans": ["Work Sans", "sans-serif"],
       },
     },
   },
