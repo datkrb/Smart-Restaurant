@@ -5,6 +5,7 @@ import { useSocketStore } from './store/useSocketStore';
 
 // Layouts
 import AdminLayout from './layouts/AdminLayout';
+import GuestLayout from './layouts/GuestLayout';
 
 // Guest Pages
 import EntryPoint from './pages/EntryPoint';
@@ -15,6 +16,7 @@ import OrderTrackingPage from './pages/guest/OrderTrackingPage';
 import AdminMenuPage from './pages/admin/AdminMenuPage';
 import AdminTablePage from './pages/admin/AdminTablePage';
 import AdminCategoryPage from './pages/admin/AdminCategoryPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 
 // Staff Pages (Waiter & Kitchen)
 import WaiterPage from './pages/waiter/WaiterPage';
@@ -36,13 +38,15 @@ function App() {
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         {/* Guest Flow */}
-        <Route path="/" element={<EntryPoint />} />
+        <Route element={<GuestLayout />}>
+          <Route path="/" element={<EntryPoint />} />
+          <Route path="/tracking" element={<OrderTrackingPage />} />
+        </Route>
         <Route path="/menu" element={<MenuPage />} />
-        <Route path="/tracking" element={<OrderTrackingPage />} />
 
         {/* Administration Flow */}
         <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Navigate to="/admin/menu" replace />} />
+          <Route index element={<AdminDashboardPage />} />
           <Route path="categories" element={<AdminCategoryPage />} />
           <Route path="menu" element={<AdminMenuPage />} />
           <Route path="tables" element={<AdminTablePage />} />
