@@ -1,55 +1,77 @@
 import { Request, Response } from "express";
-import * as tableService from "./table.service";
+import { PrismaClient } from "@prisma/client";
 
-// Create new table
-export const createTable = async (req: Request, res: Response) => {
-  try {
-    const { name, capacity } = req.body;
-    const table = await tableService.createTable(name, parseInt(capacity));
-    res.status(201).json(table);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-};
+const prisma = new PrismaClient();
 
-// Get all tables
+// 1. Lấy danh sách bàn + QR Link
 export const getTables = async (req: Request, res: Response) => {
   try {
-    const tables = await tableService.getTables();
-    res.json({ data: tables });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    const tables = await prisma.table.findMany({
+      include: { waiter: { select: { id: true, fullName: true, role: true } } },
+      orderBy: { name: 'asc' }
+    });
+
+    const tablesWithQR = tables.map(table => ({
+      ...table,
+      qrUrl: `http://localhost:5173/?tableId=${table.id}` // URL Frontend
+    }));
+
+    res.json(tablesWithQR);
+  } catch (error) {
+    console.error("Error in getTables:", error);
+    res.status(500).json({ error: "Lỗi lấy danh sách bàn", details: error instanceof Error ? error.message : error });
   }
 };
-// Get table QR code
-export const getTableQR = async (req: Request, res: Response) => {
+
+// 2. Tạo bàn mới
+export const createTable = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const qrData = await tableService.generateTableQRCode(id);
-    res.json({ data: qrData });
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    let { name, capacity, restaurantId, waiterId } = req.body;
+
+    // Nếu không có restaurantId, tự động lấy Restaurant đầu tiên (dành cho bản demo/single-tenant)
+    if (!restaurantId) {
+      const restaurant = await prisma.restaurant.findFirst();
+      if (!restaurant) {
+        return res.status(400).json({ error: "Không tìm thấy nhà hàng nào trong hệ thống. Vui lòng Seed dữ liệu." });
+      }
+      restaurantId = restaurant.id;
+    }
+
+    const newTable = await prisma.table.create({
+      data: {
+        name,
+        capacity: Number(capacity),
+        restaurantId,
+        waiterId // Gán waiter lúc tạo (nếu có)
+      }
+    });
+    res.status(201).json(newTable);
+  } catch (error) {
+    console.error("Error in createTable:", error);
+    res.status(500).json({ error: "Lỗi tạo bàn", details: error instanceof Error ? error.message : error });
   }
 };
-// Update table status
-export const updateTableStatus = async (req: Request, res: Response) => {
+
+// 3. Cập nhật bàn (Gán Waiter, đổi tên...)
+export const updateTable = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { isActive } = req.body;
-    const table = await tableService.updateTableStatus(id, isActive);
-    res.json(table);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-};
-// Delete a table
-export const deleteTable = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    await tableService.deleteTable(id);
-    res.json({ message: "Table deleted" });
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    const { name, capacity, waiterId, isActive } = req.body;
+
+    const updatedTable = await prisma.table.update({
+      where: { id },
+      data: {
+        name,
+        capacity: capacity ? Number(capacity) : undefined,
+        waiterId,
+        isActive
+      }
+    });
+
+    res.json(updatedTable);
+  } catch (error) {
+    console.error("Error in updateTable:", error);
+    res.status(500).json({ error: "Lỗi cập nhật bàn", details: error instanceof Error ? error.message : error });
   }
 };
 

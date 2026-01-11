@@ -8,9 +8,9 @@ import cors from "cors";
 import { json, urlencoded } from "body-parser";
 import { errorHandler } from "./shared/middlewares/errorHandler";
 import router from "./modules/registerRoutes";
-import guestRoutes from "./routes/guest.routes";
-import adminRoutes from "./routes/admin.routes";
-import waiterRoutes from "./routes/waiter.routes";
+import guestRoutes from "./modules/guest/guest.routes";
+import adminRoutes from "./modules/admin/admin.routes";
+import waiterRoutes from "./modules/waiter/waiter.routes";
 
 const app = express();
 const server = http.createServer(app);
