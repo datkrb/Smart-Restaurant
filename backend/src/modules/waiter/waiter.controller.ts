@@ -90,7 +90,7 @@ export const markOrderAsServed = async (req: Request, res: Response) => {
         });
 
         // Realtime notify
-        const { io } = require("../app");
+        const { io } = require("../../app");
         if (io) {
             io.emit("order_status_updated", updatedOrder);
         }

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { authMiddleware, roleGuard } from "../modules/auth/auth.middleware";
-import * as WaiterController from "../controllers/waiter.controller";
+import { authMiddleware, roleGuard } from "../auth/auth.middleware";
+import * as WaiterController from "./waiter.controller";
 import { Role } from "@prisma/client";
 
 const router = Router();
