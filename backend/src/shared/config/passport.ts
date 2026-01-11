@@ -28,6 +28,11 @@ passport.use(
           return done(null, false, { message: "Invalid email or password" });
         }
 
+        // Check if email is verified
+        if (!user.isVerified) {
+          return done(null, false, { message: "Please verify your email before logging in." });
+        }
+
         return done(null, user);
       } catch (error) {
         return done(error);

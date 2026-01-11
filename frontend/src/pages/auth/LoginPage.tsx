@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { Mail, Lock, Eye, EyeOff, User, Chrome, Smartphone } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
+import { Header } from '../../components/common/Header';
 import toast from 'react-hot-toast';
 
 const LoginPage = () => {
@@ -34,10 +35,14 @@ const LoginPage = () => {
         navigate('/admin/dashboard'); 
       } else {
         // REGISTER
-        const data = await authApi.register(email, password, fullName);
-        login(data.user, data.accessToken, data.refreshToken);
-        toast.success("Account created successfully!");
-        navigate('/admin/dashboard');
+        // API now returns { message, user }, not the full login response with tokens
+        const response = await authApi.register(email, password, fullName);
+        
+        toast.success(response.message || "Registration successful! Please check your email to verify account.");
+        
+        // Switch to login mode but don't auto-login
+        setIsLoginMode(true);
+        setPassword('');
       }
     } catch (err: any) {
       console.error(err);
@@ -54,25 +59,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="font-display bg-background-light min-h-screen flex flex-col text-text-main overflow-x-hidden">
-      {/* HEADER */}
-      <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-border-light px-4 md:px-10 py-3 bg-white">
-        <div className="flex items-center gap-4 text-text-main">
-          <div className="size-8 text-primary">
-            <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-              <path d="M44 24C44 35.0457 35.0457 44 24 44C12.9543 44 4 35.0457 4 24C4 12.9543 12.9543 4 24 4C35.0457 4 44 12.9543 44 24Z" fill="currentColor" fillOpacity="0.1"></path>
-              <path d="M24 10V38" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4"></path>
-              <path d="M10 24H38" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4"></path>
-            </svg>
-          </div>
-          <h2 className="text-text-main text-lg font-bold leading-tight tracking-[-0.015em]">Smart Restaurant</h2>
-        </div>
-        <div className="flex flex-1 justify-end gap-4 md:gap-8">
-          <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-input-bg text-text-main text-sm font-bold leading-normal tracking-[0.015em] hover:bg-border-light transition-colors">
-            <span className="truncate">Guest Checkout</span>
-          </button>
-        </div>
-      </header>
+    <div className="font-sans bg-background-light min-h-screen flex flex-col text-text-main overflow-x-hidden">
 
       {/* MAIN CONTENT */}
       <main className="flex-1 flex justify-center py-5 px-4 md:px-10 lg:px-40">
@@ -162,7 +149,7 @@ const LoginPage = () => {
                     <div className="flex flex-col gap-1.5">
                       <div className="flex justify-between items-center">
                         <span className="text-text-main text-sm font-medium leading-normal">Password</span>
-                        {isLoginMode && <a className="text-primary text-sm font-medium hover:underline" href="#">Forgot?</a>}
+                        {isLoginMode && <a className="text-primary text-sm font-medium hover:underline cursor-pointer" onClick={() => navigate('/forgot-password')}>Forgot?</a>}
                       </div>
                       <Input
                         type={showPassword ? "text" : "password"}
@@ -210,7 +197,11 @@ const LoginPage = () => {
                       <div className="grow border-t border-border-light"></div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <button className="flex items-center justify-center gap-2 rounded-lg border border-border-light bg-white h-10 px-4 hover:bg-input-bg transition-colors">
+                      <button 
+                        type="button"
+                        onClick={() => window.location.href = "http://localhost:4000/api/v1/auth/google"}
+                        className="flex items-center justify-center gap-2 rounded-lg border border-border-light bg-white h-10 px-4 hover:bg-input-bg transition-colors"
+                      >
                         <Chrome size={20} />
                         <span className="text-text-main text-sm font-bold">Google</span>
                       </button>

@@ -21,10 +21,21 @@ export const register = async (
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  return prisma.user.create({
-    data: { email, password: hashedPassword, fullName, role: Role.CUSTOMER },
+  const newUser = await prisma.user.create({
+    data: { 
+      email, 
+      password: hashedPassword, 
+      fullName, 
+      role: Role.CUSTOMER,
+      isVerified: false // Default to false
+    },
     select: { id: true, email: true, fullName: true, role: true },
   });
+
+  // Gửi email kích hoạt ngay sau khi đăng ký
+  await sendVerificationEmail(newUser.id, newUser.email);
+
+  return newUser;
 };
 
 export const generateTokensForUser = async (user: any) => {
@@ -61,6 +72,12 @@ export const logout = async (userId: string) => {
   return true;
 };
 
+import { emailService } from "../../shared/services/email.service";
+
+// ... imports remain the same
+
+// ... register function needs modification separately, let's update helper functions first
+
 export const sendVerificationEmail = async (userId: string, email: string) => {
   const token = crypto.randomBytes(32).toString("hex");
 
@@ -70,10 +87,28 @@ export const sendVerificationEmail = async (userId: string, email: string) => {
     data: { verificationToken: token },
   });
 
-  // Giả lập gửi email (In ra terminal)
-  console.log(`========================================================`);
-  console.log(`[MOCK EMAIL] Verification Code for ${email}: ${token}`);
-  console.log(`========================================================`);
+  // Gửi email thật
+  await emailService.sendVerificationEmail(email, token);
+
+  return token;
+};
+
+// ... verifyEmail function remains same
+
+// 3. Yêu cầu Reset Password (Quên mật khẩu)
+export const forgotPassword = async (email: string) => {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) throw new Error("User not found");
+
+  const token = crypto.randomBytes(32).toString("hex");
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { forgotPasswordToken: token },
+  });
+
+  // Gửi email reset thật
+  await emailService.sendPasswordResetEmail(email, token);
 
   return token;
 };
@@ -98,25 +133,6 @@ export const verifyEmail = async (token: string) => {
   return true;
 };
 
-// 3. Yêu cầu Reset Password (Quên mật khẩu)
-export const forgotPassword = async (email: string) => {
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) throw new Error("User not found");
-
-  const token = crypto.randomBytes(32).toString("hex");
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { forgotPasswordToken: token },
-  });
-
-  // Giả lập gửi email reset
-  console.log(`========================================================`);
-  console.log(`[MOCK EMAIL] Reset Password Token for ${email}: ${token}`);
-  console.log(`========================================================`);
-
-  return token;
-};
 
 // 4. Đặt lại mật khẩu mới
 export const resetPassword = async (token: string, newPassword: string) => {

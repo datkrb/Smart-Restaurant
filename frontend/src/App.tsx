@@ -12,6 +12,14 @@ import EntryPoint from './pages/EntryPoint';
 import MenuPage from './pages/MenuPage';
 import OrderTrackingPage from './pages/guest/OrderTrackingPage';
 
+//Auth Pages
+import LoginPage from './pages/auth/LoginPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import OAuthSuccessPage from './pages/auth/OAuthSuccessPage';
+import VerifyEmailPage from './pages/auth/VerifyEmailPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+
+
 // Admin Pages
 import AdminMenuPage from './pages/admin/AdminMenuPage';
 import AdminTablePage from './pages/admin/AdminTablePage';
@@ -37,12 +45,20 @@ function App() {
     <>
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
+        
         {/* Guest Flow */}
         <Route element={<GuestLayout />}>
           <Route path="/" element={<EntryPoint />} />
           <Route path="/tracking" element={<OrderTrackingPage />} />
         </Route>
         <Route path="/menu" element={<MenuPage />} />
+
+        {/* Auth Flow */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/oauth-success" element={<OAuthSuccessPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Administration Flow */}
         <Route path="/admin" element={<AdminLayout />}>
