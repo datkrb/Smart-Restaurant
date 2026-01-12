@@ -1,31 +1,14 @@
 import { Request, Response } from "express";
-import { PrismaClient, OrderStatus } from "@prisma/client";
+import * as waiterService from "./waiter.service";
 
-const prisma = new PrismaClient();
-
-// 1. Lấy danh sách bàn được giao cho Waiter này
+/**
+ * Get tables assigned to the logged-in waiter
+ */
 export const getAssignedTables = async (req: Request, res: Response) => {
     try {
         const waiterId = (req.user as any)?.userId;
 
-        const tables = await prisma.table.findMany({
-            where: waiterId ? { waiterId } : {},
-            include: {
-                sessions: {
-                    where: { status: "OPEN" },
-                    include: {
-                        order: {
-                            include: {
-                                items: {
-                                    include: { menuItem: true }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            orderBy: { name: 'asc' }
-        });
+        const tables = await waiterService.getAssignedTables(waiterId);
 
         res.json(tables);
     } catch (error) {
@@ -33,36 +16,14 @@ export const getAssignedTables = async (req: Request, res: Response) => {
     }
 };
 
-// 2. Lấy danh sách đơn hàng đã nấu xong (READY) của các bàn được giao
+/**
+ * Get orders that are ready to be served (READY status)
+ */
 export const getReadyOrders = async (req: Request, res: Response) => {
     try {
         const waiterId = (req.user as any)?.userId;
 
-        const whereClause: any = {
-            status: "READY",
-        };
-
-        if (waiterId) {
-            whereClause.tableSession = {
-                table: { waiterId: waiterId }
-            };
-        }
-
-        const orders = await prisma.order.findMany({
-            where: whereClause,
-            include: {
-                tableSession: {
-                    include: { table: true }
-                },
-                items: {
-                    include: {
-                        menuItem: true,
-                        modifiers: { include: { modifierOption: true } }
-                    }
-                }
-            },
-            orderBy: { createdAt: 'asc' }
-        });
+        const orders = await waiterService.getReadyOrders(waiterId);
 
         res.json(orders);
     } catch (error) {
@@ -70,24 +31,14 @@ export const getReadyOrders = async (req: Request, res: Response) => {
     }
 };
 
-// 3. Đánh dấu đã phục vụ (Mark as Served)
+/**
+ * Mark an order as served
+ */
 export const markOrderAsServed = async (req: Request, res: Response) => {
     try {
         const { orderId } = req.params;
 
-        const updatedOrder = await prisma.order.update({
-            where: { id: orderId },
-            data: { status: "SERVED" },
-            include: {
-                tableSession: { include: { table: true } },
-                items: {
-                    include: {
-                        menuItem: true,
-                        modifiers: { include: { modifierOption: true } }
-                    }
-                }
-            }
-        });
+        const updatedOrder = await waiterService.markOrderAsServed(orderId);
 
         // Realtime notify
         const { io } = require("../../app");
