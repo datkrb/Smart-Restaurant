@@ -1,77 +1,64 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import * as tableService from "./table.service";
 
-const prisma = new PrismaClient();
-
-// 1. Lấy danh sách bàn + QR Link
-export const getTables = async (req: Request, res: Response) => {
-  try {
-    const tables = await prisma.table.findMany({
-      include: { waiter: { select: { id: true, fullName: true, role: true } } },
-      orderBy: { name: 'asc' }
-    });
-
-    const tablesWithQR = tables.map(table => ({
-      ...table,
-      qrUrl: `http://localhost:5173/?tableId=${table.id}` // URL Frontend
-    }));
-
-    res.json(tablesWithQR);
-  } catch (error) {
-    console.error("Error in getTables:", error);
-    res.status(500).json({ error: "Lỗi lấy danh sách bàn", details: error instanceof Error ? error.message : error });
-  }
-};
-
-// 2. Tạo bàn mới
+// Create Table
 export const createTable = async (req: Request, res: Response) => {
   try {
-    let { name, capacity, restaurantId, waiterId } = req.body;
-
-    // Nếu không có restaurantId, tự động lấy Restaurant đầu tiên (dành cho bản demo/single-tenant)
-    if (!restaurantId) {
-      const restaurant = await prisma.restaurant.findFirst();
-      if (!restaurant) {
-        return res.status(400).json({ error: "Không tìm thấy nhà hàng nào trong hệ thống. Vui lòng Seed dữ liệu." });
-      }
-      restaurantId = restaurant.id;
-    }
-
-    const newTable = await prisma.table.create({
-      data: {
-        name,
-        capacity: Number(capacity),
-        restaurantId,
-        waiterId // Gán waiter lúc tạo (nếu có)
-      }
-    });
-    res.status(201).json(newTable);
-  } catch (error) {
-    console.error("Error in createTable:", error);
-    res.status(500).json({ error: "Lỗi tạo bàn", details: error instanceof Error ? error.message : error });
+    const { name, capacity, restaurantId } = req.body;
+    const table = await tableService.createTable(name, parseInt(capacity), restaurantId);
+    res.status(201).json(table);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
   }
 };
 
-// 3. Cập nhật bàn (Gán Waiter, đổi tên...)
+// Get All Tables
+export const getTables = async (req: Request, res: Response) => {
+  try {
+    const tables = await tableService.getTables();
+    // Return wrapped in { data: tables } to match frontend interceptor expectations
+    res.json({ data: tables });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Update Table (supports PATCH for any field)
 export const updateTable = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, capacity, waiterId, isActive } = req.body;
+    const data = req.body; // { name, capacity, isActive, waiterId }
 
-    const updatedTable = await prisma.table.update({
-      where: { id },
-      data: {
-        name,
-        capacity: capacity ? Number(capacity) : undefined,
-        waiterId,
-        isActive
-      }
-    });
+    // Ensure capacity is int if present
+    if (data.capacity) {
+      data.capacity = parseInt(data.capacity);
+    }
 
-    res.json(updatedTable);
-  } catch (error) {
-    console.error("Error in updateTable:", error);
-    res.status(500).json({ error: "Lỗi cập nhật bàn", details: error instanceof Error ? error.message : error });
+    const table = await tableService.updateTable(id, data);
+    res.json(table);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
   }
 };
 
+// Delete Table
+export const deleteTable = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await tableService.deleteTable(id);
+    res.json({ message: "Table deleted successfully" });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Get QR Code
+export const getTableQR = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const qrData = await tableService.generateTableQRCode(id);
+    res.json({ data: qrData });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};

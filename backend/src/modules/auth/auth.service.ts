@@ -6,6 +6,7 @@ import {
   verifyRefreshToken,
 } from "../../shared/utils/token";
 import crypto from "crypto";
+import { User } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -38,17 +39,21 @@ export const register = async (
   return newUser;
 };
 
-export const generateTokensForUser = async (user: any) => {
+export const generateTokensForUser = async (user: User) => {
   const accessToken = generateAccessToken(user.id, user.role);
   const refreshToken = generateRefreshToken(user.id);
 
   await prisma.user.update({ where: { id: user.id }, data: { refreshToken } });
-
-  return {
+  const userResponse = {
     id: user.id,
     email: user.email,
     fullName: user.fullName,
     role: user.role,
+    isVerified: user.isVerified,
+    avatarUrl: user.avatarUrl,
+  };
+  return {
+    userResponse,
     accessToken,
     refreshToken,
   };

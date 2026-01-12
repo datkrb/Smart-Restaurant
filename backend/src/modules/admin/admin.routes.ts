@@ -1,6 +1,6 @@
 import { Router } from "express";
 import categoryRoutes from "../category/category.routes";
-import menuItemRoutes from "../menu-item/menu-item.routes";
+import menuRoutes from "../menu/menu.routes";
 import tableRoutes from "../table/table.routes";
 import * as AdminOrderController from "../order/admin-order.controller";
 
@@ -9,8 +9,8 @@ const router = Router();
 // --- CATEGORY ROUTES ---
 router.use("/categories", categoryRoutes);
 
-// --- MENU ITEM ROUTES ---
-router.use("/menu-items", menuItemRoutes);
+// --- MENU ROUTES (includes menu-items, photos, modifiers) ---
+router.use("/menu", menuRoutes);
 
 // --- TABLE ROUTES ---
 router.use("/tables", tableRoutes);

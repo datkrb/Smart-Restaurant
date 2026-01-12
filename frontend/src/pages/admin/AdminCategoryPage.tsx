@@ -1,86 +1,145 @@
 import React, { useEffect, useState } from 'react';
-import axiosClient from '../../api/axiosClient';
+import { categoryApi } from '../../api/categoryApi';
+import { Category } from '../../types/category.types';
 
-interface Category {
-  id: string;
-  name: string;
-  _count?: { menuItems: number };
-}
-
-export default function AdminCategoryPage() {
+export default function CategoryPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
-  // Hàm load danh sách
-  const fetchCategories = () => {
-    axiosClient.get('/admin/categories').then(res => setCategories(res as any));
+  const fetchCategories = async () => {
+    try {
+      const data = await categoryApi.getAllCategories();
+      setCategories(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to fetch categories", error);
+    }
   };
 
   useEffect(() => {
     fetchCategories();
   }, []);
 
-  const handleAddCategory = async (e: React.FormEvent) => {
+  const handleOpenModal = (category?: Category) => {
+    if (category) {
+        setEditingCategory(category);
+        setNewCategoryName(category.name);
+    } else {
+        setEditingCategory(null);
+        setNewCategoryName('');
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSaveCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const RESTAURANT_ID = "37f51c2d-d366-4d01-9e66-1d1a17dbae3b";
-
-      await axiosClient.post('/admin/categories', {
-        name: newCategoryName,
-        restaurantId: RESTAURANT_ID
-      });
-
+      if (editingCategory) {
+          // UPDATE
+          await categoryApi.updateCategory(editingCategory.id, newCategoryName);
+      } else {
+          // CREATE
+          await categoryApi.createCategory(newCategoryName);
+      }
+      
       setIsModalOpen(false);
       setNewCategoryName('');
-      fetchCategories(); // Load lại sau khi thêm
+      setEditingCategory(null);
+      fetchCategories(); 
     } catch (error) {
-      alert("Lỗi thêm danh mục (Kiểm tra lại restaurantId)");
+      alert(editingCategory ? "Lỗi cập nhật danh mục" : "Lỗi thêm danh mục");
     }
   };
 
+  const handleDeleteCategory = async (id: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa danh mục này?")) return;
+    try {
+      await categoryApi.deleteCategory(id);
+      fetchCategories();
+    } catch (error) {
+       alert("Lỗi xóa danh mục");
+    }
+  }
+
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Quản lý danh mục</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+    <div className="bg-white rounded-xl shadow p-6">
+      <div className="flex justify-between mb-6">
+        <h2 className="text-xl font-bold">Danh sách danh mục</h2>
+        <button 
+          onClick={() => handleOpenModal()}
+          className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
         >
-          + Thêm danh mục
+          + Thêm mới
         </button>
       </div>
+      <table className="w-full text-left">
+        <thead>
+          <tr className="border-b text-gray-500 uppercase text-sm">
+            <th className="pb-3">Tên</th>
+            <th className="pb-3 text-center">Số món</th>
+            <th className="pb-3 text-center">Trạng thái</th>
+            <th className="pb-3 text-right">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {categories.map((cat) => (
+            <tr key={cat.id} className="hover:bg-gray-50 transition-colors">
+              <td className="py-4 font-medium">{cat.name}</td>
+              <td className="py-4 text-center">{cat.menuItems?.length || 0}</td>
+              <td className="py-4 text-center">
+                <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-700">
+                  Active
+                </span>
+              </td>
+              <td className="py-4 text-right space-x-2">
+                <button 
+                  onClick={() => handleOpenModal(cat)}
+                  className="text-blue-600 hover:underline font-medium"
+                >
+                  Sửa
+                </button>
+                <button 
+                  onClick={() => handleDeleteCategory(cat.id)}
+                  className="text-red-600 hover:underline font-medium"
+                >
+                  Xóa
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {categories.map(cat => (
-          <div key={cat.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h3 className="text-xl font-bold mb-1">{cat.name}</h3>
-            <p className="text-gray-500 text-sm mb-4">
-              {cat._count?.menuItems || 0} món ăn
-            </p>
-            <div className="flex gap-2">
-              <button className="text-blue-600 text-sm font-medium">Sửa</button>
-              <button className="text-red-600 text-sm font-medium">Xóa</button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* MODAL THÊM DANH MỤC */}
+      {/* MODAL THÊM/SỬA DANH MỤC */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <form onSubmit={handleAddCategory} className="bg-white p-6 rounded-xl w-96">
-            <h2 className="text-lg font-bold mb-4">Thêm danh mục mới</h2>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
+          <form onSubmit={handleSaveCategory} className="bg-white p-6 rounded-xl w-96 shadow-lg transform transition-all scale-100">
+            <h2 className="text-lg font-bold mb-4 text-gray-800">
+                {editingCategory ? "Cập nhật danh mục" : "Thêm danh mục mới"}
+            </h2>
             <input
-              className="w-full border p-2 rounded mb-4"
+              className="w-full border border-gray-300 p-2 rounded-lg mb-4 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               placeholder="Tên danh mục (VD: Đồ uống)"
               value={newCategoryName}
               onChange={e => setNewCategoryName(e.target.value)}
               required
+              autoFocus
             />
-            <div className="flex gap-2">
-              <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded">Lưu</button>
-              <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-gray-200 py-2 rounded">Hủy</button>
+            <div className="flex gap-3">
+              <button 
+                type="submit" 
+                className="flex-1 bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors font-medium"
+              >
+                  {editingCategory ? "Cập nhật" : "Lưu"}
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setIsModalOpen(false)} 
+                className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
+                Hủy
+              </button>
             </div>
           </form>
         </div>
