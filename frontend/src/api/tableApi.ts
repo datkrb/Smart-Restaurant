@@ -1,0 +1,34 @@
+import axiosClient from "./axiosClient";
+import { Table } from "../types";
+
+export const tableApi = {
+    // 1. Get List of Tables
+    // Response: { data: Table[] } - Backend routes returns { data: tables }
+    getTables: () => {
+        return axiosClient.get<{ data: Table[] }>("/tables")
+    },
+
+    // 2. Create Table
+    // Response: Table object
+    createTable: (name: string, capacity: number) => {
+        return axiosClient.post<Table>("/tables", { name, capacity }) 
+    },
+
+    // 3. Update Table Status (Active/Inactive)
+    // Response: Updated Table
+    updateTableStatus: (id: string, isActive: boolean) => {
+        return axiosClient.patch<Table>(`/tables/${id}`, { isActive }) 
+    },
+
+    // 4. Get Table QR Code
+    // Response: { data: string (base64/url) }
+    getTableQR: (id: string) => {
+        return axiosClient.get<{ data: string }>(`/tables/${id}/qr`)
+    },
+
+    // 5. Delete Table
+    // Response: { message: string }
+    deleteTable: (id: string) => {
+        return axiosClient.delete<{ message: string }>(`/tables/${id}`)
+    }
+};

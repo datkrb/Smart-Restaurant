@@ -1,72 +1,75 @@
-import { PrismaClient } from "@prisma/client";
-import * as QRCode from "qrcode";
+import { PrismaClient, Table } from "@prisma/client";
+import QRCode from "qrcode";
 
 const prisma = new PrismaClient();
 
-//URL Frontend
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+// 1. Create Table
+export const createTable = async (name: string, capacity: number, restaurantId?: string) => {
+    // If restaurantId is not provided, try to find the first one
+    let rId = restaurantId;
+    if (!rId) {
+        const firstRestaurant = await prisma.restaurant.findFirst();
+        if (firstRestaurant) {
+            rId = firstRestaurant.id;
+        } else {
+            // Create a default restaurant if none exists (for dev safety)
+            const newRes = await prisma.restaurant.create({
+                data: { name: "Default Restaurant", address: "Localhost" }
+            });
+            rId = newRes.id;
+        }
+    }
 
-//Get id of restaurant
-const getDefaultRestaurantId = async () => {
-  const restaurant = await prisma.restaurant.findFirst();
-  if (!restaurant) {
-    throw new Error("No restaurant found! Please run seed data first.");
-  }
-  return restaurant.id;
+    return await prisma.table.create({
+        data: {
+            name,
+            capacity,
+            restaurantId: rId!,
+            isActive: true
+        }
+    });
 };
 
-// Create new table
-export const createTable = async (name: string, capacity: number) => {
-  const restaurantId = await getDefaultRestaurantId();
-  return await prisma.table.create({
-    data: {
-      name,
-      capacity,
-      restaurantId,
-      isActive: true,
-    },
-  });
-};
-
-// Get all tables for a restaurant
+// 2. Get Tables
 export const getTables = async () => {
-  const restaurantId = await getDefaultRestaurantId();
-  return await prisma.table.findMany({
-    where: {
-      restaurantId,
-    },
-  });
+    return await prisma.table.findMany({
+        orderBy: { name: 'asc' },
+        include: { waiter: true }
+    });
 };
 
-// Generate QR code for a table
-export const generateTableQRCode = async (tableId: string) => {
-  const table = await prisma.table.findUnique({
-    where: { id: tableId },
-  });
-  if (!table) {
-    throw new Error("Table not found");
-  }
-  if (!table.isActive) {
-    throw new Error("Table is not active");
-  }
-
-  const qrCodeData = `${FRONTEND_URL}/table/${table.id}`;
-  const qrCodeImageUrl = await QRCode.toDataURL(qrCodeData);
-
-  return qrCodeImageUrl;
+// 3. Get Table By ID
+export const getTableById = async (id: string) => {
+    return await prisma.table.findUnique({
+        where: { id },
+        include: { waiter: true }
+    });
 };
 
-// update table status
-export const updateTableStatus = async (tableId: string, isActive: boolean) => {
-  return await prisma.table.update({
-    where: { id: tableId },
-    data: { isActive },
-  });
+// 4. Update Table (Status, Name, Capacity, Waiter)
+export const updateTable = async (id: string, data: Partial<Table>) => {
+    return await prisma.table.update({
+        where: { id },
+        data
+    });
 };
 
-// Delete a table
-export const deleteTable = async (tableId: string) => {
-  return await prisma.table.delete({
-    where: { id: tableId },
-  });
+// 5. Delete Table
+export const deleteTable = async (id: string) => {
+    return await prisma.table.delete({
+        where: { id }
+    });
+};
+
+// 6. Generate QR Code
+export const generateTableQRCode = async (id: string) => {
+    const table = await prisma.table.findUnique({ where: { id } });
+    if (!table) throw new Error("Table not found");
+
+    // URL to frontend table ordering page
+    const url = `${process.env.FRONTEND_URL || "http://localhost:3000"}/table/${id}`;
+    
+    // Generate QR as Data URL (Base64)
+    const qrCode = await QRCode.toDataURL(url);
+    return qrCode;
 };
