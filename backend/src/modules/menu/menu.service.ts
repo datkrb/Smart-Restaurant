@@ -1,5 +1,5 @@
-import { PrismaClient, MenuItemStatus } from "@prisma/client";
-
+import { PrismaClient, MenuItemStatus, Prisma } from "@prisma/client";
+import { MenuItemOptions, SortOption } from "../../types/menu.types";
 const prisma = new PrismaClient();
 
 //Get id of restaurant
@@ -93,10 +93,8 @@ export const deleteMenuItem = async (id: string) => {
 
 //get menu items by category id
 export const getMenuItemsByCategoryId = async (categoryId: string) => {
-  return await prisma.menuItem.findMany({
-    where: {
-      categoryId,
-    },
+  return await getMenuItems({
+    categoryId,
   });
 };
 
@@ -146,4 +144,81 @@ export const createModifierOption = async (
       priceDelta: price,
     },
   });
+};
+
+export const getMenuItems = async (options: MenuItemOptions) => {
+  const {
+    page = 1,
+    limit = 10,
+    search,
+    minPrice,
+    maxPrice,
+    status,
+    categoryId,
+    isChefRecommended,
+    sortBy,
+  } = options;
+
+  const skip = (page - 1) * limit;
+
+  // 2. Fix lỗi logic lọc giá (Merge min/max vào chung 1 object)
+  const priceFilter: Prisma.FloatFilter | undefined = 
+    (minPrice || maxPrice) 
+      ? {
+          ...(minPrice && { gte: minPrice }),
+          ...(maxPrice && { lte: maxPrice }),
+        }
+      : undefined;
+
+  const where: Prisma.MenuItemWhereInput = {
+    ...(categoryId && { categoryId }),
+    ...(status && { status }),
+    ...(isChefRecommended !== undefined && { isChefRecommended }), // Check undefined để cho phép false
+    ...(priceFilter && { price: priceFilter }), // Sử dụng bộ lọc giá đã fix
+    ...(search && {
+      OR: [
+        { name: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+      ],
+    }),
+  };
+
+  // 3. Fix logic Sort: Mặc định sort theo ngày tạo nếu không chọn gì
+  let orderBy: Prisma.MenuItemOrderByWithRelationInput = { createdAt: 'desc' }; 
+
+  if (sortBy === SortOption.price_ASC) {
+    orderBy = { price: "asc" };
+  } else if (sortBy === SortOption.price_DESC) {
+    orderBy = { price: "desc" };
+  } else if (sortBy === SortOption.newest) {
+    orderBy = { createdAt: "desc" };
+  }
+
+  const [total, data] = await prisma.$transaction([
+    prisma.menuItem.count({ where }),
+    prisma.menuItem.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy,
+      include: {
+        category: true,
+        modifierGroups: {
+          include: {
+            options: true,
+          },
+        },
+      },
+    }),
+  ]);
+
+  return {
+    data,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 };
