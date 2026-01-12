@@ -127,12 +127,12 @@ export const getMenuItems = async(req: Request, res: Response) =>{
     const options: MenuItemOptions = {
       page: Number(page) || 1,
       limit: Number(limit) || 10,
-      search: String(search) || "",
-      minPrice: Number(minPrice) || undefined,
-      maxPrice: Number(maxPrice) || undefined,
+      search: search ? String(search) : undefined,
+      minPrice: minPrice ? Number(minPrice) : undefined,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
       status: status ? status as MenuItemStatus : undefined,
-      categoryId: String(categoryId) || undefined,
-      isChefRecommended: Boolean(isChefRecommended) || undefined,
+      categoryId: categoryId ? String(categoryId) : undefined,
+      isChefRecommended: isChefRecommended ? Boolean(isChefRecommended) : undefined,
       sortBy: sortBy ? sortBy as SortOption : undefined,
     };
     

@@ -1,27 +1,58 @@
 import { Request, Response } from "express";
 import * as tableService from "./table.service";
 
-// Create new table
+// Create Table
 export const createTable = async (req: Request, res: Response) => {
   try {
-    const { name, capacity } = req.body;
-    const table = await tableService.createTable(name, parseInt(capacity));
+    const { name, capacity, restaurantId } = req.body;
+    const table = await tableService.createTable(name, parseInt(capacity), restaurantId);
     res.status(201).json(table);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
 
-// Get all tables
+// Get All Tables
 export const getTables = async (req: Request, res: Response) => {
   try {
     const tables = await tableService.getTables();
+    // Return wrapped in { data: tables } to match frontend interceptor expectations
     res.json({ data: tables });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
-// Get table QR code
+
+// Update Table (supports PATCH for any field)
+export const updateTable = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const data = req.body; // { name, capacity, isActive, waiterId }
+    
+    // Ensure capacity is int if present
+    if (data.capacity) {
+        data.capacity = parseInt(data.capacity);
+    }
+
+    const table = await tableService.updateTable(id, data);
+    res.json(table);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Delete Table
+export const deleteTable = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await tableService.deleteTable(id);
+    res.json({ message: "Table deleted successfully" });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Get QR Code
 export const getTableQR = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -31,25 +62,3 @@ export const getTableQR = async (req: Request, res: Response) => {
     res.status(400).json({ message: error.message });
   }
 };
-// Update table status
-export const updateTableStatus = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { isActive } = req.body;
-    const table = await tableService.updateTableStatus(id, isActive);
-    res.json(table);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-};
-// Delete a table
-export const deleteTable = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    await tableService.deleteTable(id);
-    res.json({ message: "Table deleted" });
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-};
-

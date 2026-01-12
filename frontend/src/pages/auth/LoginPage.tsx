@@ -7,6 +7,7 @@ import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Header } from '../../components/common/Header';
 import toast from 'react-hot-toast';
+import { LoginResponse } from '../../types/auth.types';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -30,9 +31,15 @@ const LoginPage = () => {
       if (isLoginMode) {
         // LOGIN
         const data = await authApi.login(email, password);
+        console.log(data);
         login(data.user, data.accessToken, data.refreshToken);
+        console.log(data.user);
         toast.success("Welcome back!");
-        navigate('/admin/dashboard'); 
+        if(data.user.role === "ADMIN" || data.user.role === "SUPER_ADMIN") {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/');
+        }
       } else {
         // REGISTER
         // API now returns { message, user }, not the full login response with tokens

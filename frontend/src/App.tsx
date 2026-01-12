@@ -23,7 +23,7 @@ import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 // Admin Pages
 import AdminMenuPage from './pages/admin/AdminMenuPage';
 import AdminTablePage from './pages/admin/AdminTablePage';
-import AdminCategoryPage from './pages/admin/AdminCategoryPage';
+import CategoryPage from './pages/admin/AdminCategoryPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 
 // Staff Pages (Waiter & Kitchen)
@@ -63,7 +63,7 @@ function App() {
         {/* Administration Flow */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboardPage />} />
-          <Route path="categories" element={<AdminCategoryPage />} />
+          <Route path="categories" element={<CategoryPage />} />
           <Route path="menu" element={<AdminMenuPage />} />
           <Route path="tables" element={<AdminTablePage />} />
           <Route path="orders" element={<OrderManagement />} />

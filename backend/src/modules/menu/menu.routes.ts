@@ -32,10 +32,10 @@ menuRouter.patch(
   menuController.updateMenuItem
 );
 menuRouter.get(
-  "/menu-items/:categoryId",
+  "/menu-items/category/:categoryId",
   menuController.getMenuItemsByCategoryId
 );
-menuRouter.get("/menu-items/", menuController.getMenuItemById);
+menuRouter.get("/menu-items/:id", menuController.getMenuItemById);
 menuRouter.delete(
   "/menu-items/:id",
   roleGuard([Role.ADMIN, Role.SUPER_ADMIN]),
