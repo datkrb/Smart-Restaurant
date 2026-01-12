@@ -18,7 +18,7 @@ export const login = async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
     const data = await authService.generateTokensForUser(user);
-    res.json(data);
+    res.json({user: data.userResponse, accessToken: data.accessToken, refreshToken: data.refreshToken});
   } catch (error: any) {
     res.status(401).json({ message: error.message });
   }

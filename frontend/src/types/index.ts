@@ -29,6 +29,7 @@ export interface MenuItem {
   isChefRecommended: boolean;
   modifierGroups: ModifierGroup[];
   photos?: MenuItemPhoto[];
+  category?: Category;
 }
 
 export interface Category {
@@ -42,4 +43,13 @@ export interface CartItem extends MenuItem {
   quantity: number;
   selectedModifiers: { [groupId: string]: ModifierOption[] }; // Lưu option đã chọn
   totalPrice: number; // Giá sau khi cộng modifier
+}
+
+export interface Table {
+    id: string;
+    name: string;
+    capacity: number;
+    isActive: boolean;
+    qrCodeUrl?: string;
+    restaurantId: string;
 }
