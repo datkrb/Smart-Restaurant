@@ -46,6 +46,7 @@ menuRouter.post(
   roleGuard([Role.ADMIN, Role.SUPER_ADMIN, Role.KITCHEN]),
   menuController.createModifierGroup
 );
+menuRouter.get("/", menuController.getMenuItems);
 
 // 2. Tạo lựa chọn (VD: Size L)
 menuRouter.post(

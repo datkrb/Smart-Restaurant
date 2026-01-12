@@ -1,6 +1,7 @@
 import e, { Request, Response } from "express";
 import * as menuService from "./menu.service";
-
+import { MenuItemOptions, SortOption } from "../../types/menu.types";
+import { MenuItemStatus } from "@prisma/client";
 // Create category
 export const createCategory = async (req: Request, res: Response) => {
   try {
@@ -107,6 +108,45 @@ export const getMenuItemById = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error fetching menu item", error });
   }
 };
+
+//get menu items
+export const getMenuItems = async(req: Request, res: Response) =>{
+  try{
+    const {
+      page,
+      limit,
+      search,
+      minPrice, 
+      maxPrice, 
+      status, 
+      categoryId, 
+      isChefRecommended, 
+      sortBy
+    } = req.query;
+
+    const options: MenuItemOptions = {
+      page: Number(page) || 1,
+      limit: Number(limit) || 10,
+      search: String(search) || "",
+      minPrice: Number(minPrice) || undefined,
+      maxPrice: Number(maxPrice) || undefined,
+      status: status ? status as MenuItemStatus : undefined,
+      categoryId: String(categoryId) || undefined,
+      isChefRecommended: Boolean(isChefRecommended) || undefined,
+      sortBy: sortBy ? sortBy as SortOption : undefined,
+    };
+    
+    const menuItems = await menuService.getMenuItems(options);
+    res.status(200).json({
+      message: "Menu items fetched successfully",
+      menuItems,
+    });
+  }catch(error){
+    res.status(500).json({ message: "Error fetching menu items", error });
+  }
+}
+
+//create modifier group
 export const createModifierGroup = async (req: Request, res: Response) => {
   try {
     // Body nhận: menuItemId, name, required (true/false)
