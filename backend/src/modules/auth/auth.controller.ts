@@ -5,7 +5,10 @@ export const register = async (req: Request, res: Response) => {
   try {
     const { email, password, fullName } = req.body;
     const user = await authService.register(email, password, fullName);
-    res.status(201).json(user);
+    res.status(201).json({ 
+      message: "Registration successful. Please check your email to verify your account.",
+      user 
+    });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }

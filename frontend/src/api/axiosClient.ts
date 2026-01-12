@@ -1,37 +1,44 @@
-import axios from "axios";
+import axios from "axios"
 
+// initial instance axios
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1",
   headers: {
     "Content-Type": "application/json",
   },
-});
+})
 
+// interceptors
+// automatically attach token to request header
 axiosClient.interceptors.request.use(
   (config) => {
-    // You can add authorization headers or other custom headers here
-    const token = localStorage.getItem("authToken");
-
+    const token = localStorage.getItem("accessToken")
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers["Authorization"] = `Bearer ${token}`
     }
-
-    return config;
+    return config
   },
-  (error) => Promise.reject(error)
-);
-
-axiosClient.interceptors.response.use(
-  (response) => response.data, // Chỉ lấy data, bỏ qua wrapper của axios
   (error) => {
-    // Nếu lỗi 401 (Unauthorized), có thể clear token và redirect về login tại đây
-    if (error.response?.status === 401) {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("user");
-      // window.location.href = '/login'; // Cẩn thận loop vô hạn
-    }
-    return Promise.reject(error);
+    return Promise.reject(error)
   }
-);
+)
 
-export default axiosClient;
+// interceptors response
+axiosClient.interceptors.response.use(
+  (response) => {
+    return response.data
+  },
+  error => {
+    if(error.response.status === 401){
+      localStorage.removeItem("accessToken")
+      localStorage.removeItem("refreshToken")
+      localStorage.removeItem("user")
+      
+    }
+    return Promise.reject(error)
+  }
+
+)
+
+export default axiosClient
+

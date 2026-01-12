@@ -9,6 +9,7 @@ import ItemModal from '../components/ItemModal';
 import CartModal from '../components/CartModal';
 import { useCartStore } from '../store/useCartStore';
 import { useDebounce } from '../hooks/useDebounce';
+import { Footer } from '../components/common/Footer';
 
 export default function MenuPage() {
   // --- 1. STATE & HOOKS ---
@@ -320,6 +321,9 @@ export default function MenuPage() {
         />
       )}
       <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      
+      <Footer />
     </div>
   );
 }
+
