@@ -41,7 +41,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Routes
 app.use("/api/v1", router);
-app.use("/api/guest", guestRoutes); // Đưa về chung một mối
+app.use("/api/guest", guestRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/waiter", waiterRoutes);
 
