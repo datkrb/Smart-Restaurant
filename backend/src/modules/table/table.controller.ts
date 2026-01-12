@@ -28,10 +28,10 @@ export const updateTable = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const data = req.body; // { name, capacity, isActive, waiterId }
-    
+
     // Ensure capacity is int if present
     if (data.capacity) {
-        data.capacity = parseInt(data.capacity);
+      data.capacity = parseInt(data.capacity);
     }
 
     const table = await tableService.updateTable(id, data);
