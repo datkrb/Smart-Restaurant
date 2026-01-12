@@ -1,142 +1,69 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import * as guestService from "./guest.service";
 
-const prisma = new PrismaClient();
-
-// 1. Khởi tạo hoặc lấy Session hiện tại của bàn
+/**
+ * Start or get existing table session
+ */
 export const startSession = async (req: Request, res: Response) => {
     try {
         const { tableId } = req.body;
         console.log("Đang nhận tableId:", tableId);
 
-        // Kiểm tra bàn có tồn tại không
-        const table = await prisma.table.findUnique({
-            where: { id: tableId },
-        });
-        if (!table) return res.status(404).json({ error: "Table not found" });
-
-        // Tìm session đang mở (OPEN) của bàn này
-        let session = await prisma.tableSession.findFirst({
-            where: {
-                tableId: tableId,
-                status: "OPEN",
-            },
-        });
-
-        // Nếu chưa có, tạo mới
-        if (!session) {
-            session = await prisma.tableSession.create({
-                data: {
-                    tableId: tableId,
-                    status: "OPEN",
-                },
-            });
-        }
+        const session = await guestService.startSession(tableId);
 
         res.json(session);
-    } catch (error) {
+    } catch (error: any) {
         console.error("LỖI BACKEND CHI TIẾT:", error);
+        if (error.message === "Table not found") {
+            return res.status(404).json({ error: error.message });
+        }
         res.status(500).json({ error: "Could not start session" });
     }
 };
 
-// 2. API lấy danh sách Category (Chỉ để hiển thị thanh lọc)
+/**
+ * Get all categories for menu filtering
+ */
 export const getCategories = async (req: Request, res: Response) => {
     try {
-        const categories = await prisma.category.findMany({
-            orderBy: { name: 'asc' }
-        });
+        const categories = await guestService.getCategories();
         res.json(categories);
     } catch (error) {
         res.status(500).json({ error: "Lỗi lấy danh mục" });
     }
 };
 
-// 3. API lấy món ăn nâng cao (Search, Filter, Sort, Pagination)
+/**
+ * Get menu items with search, filter, sort, and pagination
+ */
 export const getMenuItems = async (req: Request, res: Response) => {
     try {
-        const { page = 1, limit = 10, search, categoryId, isChefRecommended, sortBy } = req.query;
-        const skip = (Number(page) - 1) * Number(limit);
+        const { page, limit, search, categoryId, isChefRecommended, sortBy } = req.query;
 
-        // Xây dựng điều kiện lọc
-        const where: any = {
-            status: { in: ["AVAILABLE", "SOLD_OUT"] } // Lấy cả món hết hàng để khách biết
-        };
-
-        if (search) {
-            where.name = { contains: String(search), mode: 'insensitive' };
-        }
-
-        if (categoryId && categoryId !== 'all') {
-            where.categoryId = String(categoryId);
-        }
-
-        if (isChefRecommended === 'true') {
-            where.isChefRecommended = true;
-        }
-
-        // Determine Sort Order
-        let orderBy: any = [
-            { isChefRecommended: 'desc' },
-            { createdAt: 'desc' }
-        ];
-
-        if (sortBy === 'popular') {
-            orderBy = {
-                orderItems: {
-                    _count: 'desc'
-                }
-            };
-        }
-
-        // Query Database
-        const items = await prisma.menuItem.findMany({
-            where,
-            take: Number(limit),
-            skip,
-            include: {
-                photos: true,
-                modifierGroups: {
-                    include: { options: true }
-                },
-                _count: {
-                    select: { orderItems: true } // Calculate popular count if needed for debugging, optional
-                }
-            },
-            orderBy: orderBy
+        const result = await guestService.getMenuItems({
+            page: page ? Number(page) : undefined,
+            limit: limit ? Number(limit) : undefined,
+            search: search ? String(search) : undefined,
+            categoryId: categoryId ? String(categoryId) : undefined,
+            isChefRecommended: isChefRecommended === "true",
+            sortBy: sortBy ? String(sortBy) : undefined,
         });
 
-        // Trả về kèm thông tin phân trang
-        res.json({
-            data: items,
-            hasMore: items.length === Number(limit)
-        });
-
+        res.json(result);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Lỗi lấy thực đơn" });
     }
 };
 
-// 4. Lấy chi tiết đơn hàng (Order Tracking)
+/**
+ * Get order details by table session ID
+ */
 export const getOrderDetails = async (req: Request, res: Response) => {
     try {
         const { tableSessionId } = req.params;
 
-        const order = await prisma.order.findUnique({
-            where: { tableSessionId },
-            include: {
-                items: {
-                    include: {
-                        menuItem: true,
-                        modifiers: { include: { modifierOption: true } }
-                    }
-                },
-                tableSession: {
-                    include: { table: true }
-                }
-            }
-        });
+        const order = await guestService.getOrderDetails(tableSessionId);
 
         if (!order) {
             return res.status(404).json({ error: "Order not found" });
@@ -149,15 +76,14 @@ export const getOrderDetails = async (req: Request, res: Response) => {
     }
 };
 
-// 5. Yêu cầu thanh toán
+/**
+ * Request bill for an order
+ */
 export const requestBill = async (req: Request, res: Response) => {
     try {
         const { orderId } = req.params;
 
-        const order = await prisma.order.update({
-            where: { id: orderId },
-            data: { billRequested: true }
-        });
+        const order = await guestService.requestBill(orderId);
 
         // Emit socket event to notify waiter
         try {
@@ -176,62 +102,50 @@ export const requestBill = async (req: Request, res: Response) => {
     }
 };
 
-// 6. Lấy danh sách review của món ăn (Phân trang)
+/**
+ * Get reviews for a menu item
+ */
 export const getMenuItemReviews = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { page = 1, limit = 5 } = req.query;
-        const skip = (Number(page) - 1) * Number(limit);
+        const { page, limit } = req.query;
 
-        const reviews = await prisma.review.findMany({
-            where: { menuItemId: id },
-            take: Number(limit),
-            skip,
-            orderBy: { createdAt: 'desc' },
-            include: {
-                user: {
-                    select: { fullName: true, avatarUrl: true }
-                }
-            }
+        const result = await guestService.getMenuItemReviews({
+            menuItemId: id,
+            page: page ? Number(page) : undefined,
+            limit: limit ? Number(limit) : undefined,
         });
 
-        const total = await prisma.review.count({ where: { menuItemId: id } });
-
-        res.json({
-            data: reviews,
-            total,
-            hasMore: (skip + reviews.length) < total
-        });
+        res.json(result);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Lỗi lấy đánh giá" });
     }
 };
 
-// 7. Tạo review mới
+/**
+ * Create a new review for a menu item
+ */
 export const createMenuItemReview = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { rating, comment, customerName } = req.body;
         const user = req.user as any;
 
-        if (!rating || rating < 1 || rating > 5) {
-            return res.status(400).json({ error: "Rating must be between 1 and 5" });
-        }
-
-        const review = await prisma.review.create({
-            data: {
-                menuItemId: id,
-                userId: user?.id || null,
-                rating: Number(rating),
-                comment,
-                customerName: user ? user.fullName : (customerName || "Khách vãng lai")
-            }
+        const review = await guestService.createMenuItemReview({
+            menuItemId: id,
+            userId: user?.id,
+            rating: Number(rating),
+            comment,
+            customerName: user ? user.fullName : customerName,
         });
 
         res.status(201).json(review);
-    } catch (error) {
+    } catch (error: any) {
         console.error(error);
+        if (error.message === "Rating must be between 1 and 5") {
+            return res.status(400).json({ error: error.message });
+        }
         res.status(500).json({ error: "Lỗi gửi đánh giá" });
     }
 };

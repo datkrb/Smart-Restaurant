@@ -1,30 +1,15 @@
 import { Request, Response } from "express";
-import { PrismaClient, OrderStatus } from "@prisma/client";
+import { OrderStatus } from "@prisma/client";
+import * as orderService from "./order.service";
 
-const prisma = new PrismaClient();
-
-// 1. Lấy danh sách đơn hàng (hỗ trợ lọc theo status)
+/**
+ * Get all orders (with optional status filter)
+ */
 export const getOrders = async (req: Request, res: Response) => {
     try {
         const { status } = req.query;
 
-        const whereCondition = status ? { status: status as OrderStatus } : {};
-
-        const orders = await prisma.order.findMany({
-            where: whereCondition,
-            include: {
-                tableSession: {
-                    include: { table: true } // Để lấy tên bàn
-                },
-                items: {
-                    include: {
-                        menuItem: true,
-                        modifiers: { include: { modifierOption: true } } // Để lấy chi tiết món và option (Size, Topping)
-                    }
-                }
-            },
-            orderBy: { createdAt: 'asc' } // Đơn cũ nhất hiện lên đầu (FIFO)
-        });
+        const orders = await orderService.getOrders(status as OrderStatus | undefined);
 
         res.json(orders);
     } catch (error) {
@@ -32,25 +17,15 @@ export const getOrders = async (req: Request, res: Response) => {
     }
 };
 
-// 2. Cập nhật trạng thái đơn hàng (Duyệt/Từ chối/Nấu xong)
+/**
+ * Update order status (Approve/Reject/Ready)
+ */
 export const updateOrderStatus = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
 
-        const updatedOrder = await prisma.order.update({
-            where: { id },
-            data: { status: status as OrderStatus },
-            include: {
-                tableSession: { include: { table: true } },
-                items: {
-                    include: {
-                        menuItem: true,
-                        modifiers: { include: { modifierOption: true } }
-                    }
-                }
-            }
-        });
+        const updatedOrder = await orderService.updateOrderStatus(id, status as OrderStatus);
 
         // Realtime notify
         const { io } = require("../../app");
