@@ -7,6 +7,32 @@ async function main() {
   console.log("🌱 Seeding database...");
 
   // =========================
+  // XÓA DỮ LIỆU CŨ (theo thứ tự từ child → parent)
+  // =========================
+  console.log("🗑️  Cleaning old data...");
+
+  try {
+    await prisma.payment.deleteMany();
+    await prisma.orderItemModifier.deleteMany();
+    await prisma.orderItem.deleteMany();
+    await prisma.order.deleteMany();
+    await prisma.tableSession.deleteMany();
+    await prisma.review.deleteMany();
+    await prisma.menuItemPhoto.deleteMany();
+    await prisma.modifierOption.deleteMany();
+    await prisma.modifierGroup.deleteMany();
+    await prisma.menuItem.deleteMany();
+    await prisma.category.deleteMany();
+    await prisma.table.deleteMany();
+    await prisma.restaurant.deleteMany();
+    // Không xóa User để giữ tài khoản admin
+
+    console.log("✅ Old data cleaned!");
+  } catch (error) {
+    console.log("⚠️  Some tables don't exist yet, skipping cleanup...");
+  }
+
+  // =========================
   // USERS
   // =========================
   const passwordHash = await bcrypt.hash("123456", 10);
