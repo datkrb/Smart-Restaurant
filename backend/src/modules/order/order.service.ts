@@ -111,14 +111,62 @@ export const createOrder = async (data: CreateOrderInput) => {
 /**
  * Get all orders with optional status filter
  */
-export const getOrders = async (status?: OrderStatus) => {
-    const whereCondition = status ? { status } : {};
+/**
+ * Get all orders with optional filters and pagination
+ */
+export const getOrders = async (params: {
+    page?: number;
+    limit?: number;
+    status?: OrderStatus;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    startDate?: Date; // Optional: Filter by date range
+    endDate?: Date;
+}) => {
+    const {
+        page = 1,
+        limit = 10,
+        status,
+        sortBy = "createdAt",
+        sortOrder = "desc",
+        startDate,
+        endDate
+    } = params;
 
-    return await prisma.order.findMany({
-        where: whereCondition,
-        include: orderInclude,
-        orderBy: { createdAt: "asc" }, // FIFO - oldest first
-    });
+    const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (status) {
+        where.status = status;
+    }
+
+    if (startDate && endDate) {
+        where.createdAt = {
+            gte: startDate,
+            lte: endDate,
+        };
+    }
+
+    const [orders, total] = await Promise.all([
+        prisma.order.findMany({
+            where,
+            include: orderInclude,
+            orderBy: { [sortBy]: sortOrder },
+            skip,
+            take: Number(limit),
+        }),
+        prisma.order.count({ where }),
+    ]);
+
+    return {
+        data: orders,
+        pagination: {
+            total,
+            page: Number(page),
+            limit: Number(limit),
+            totalPages: Math.ceil(total / limit),
+        },
+    };
 };
 
 /**

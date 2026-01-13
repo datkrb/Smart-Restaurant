@@ -32,8 +32,38 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
-    const users = await userService.getUsers();
-    res.status(200).json({ data: users });
+    const {
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+      search,
+      role,
+      isEmployee,
+    } = req.query as any;
+
+    const currentUserRole = (req.user as any)?.role;
+    const excludeRoles: Role[] = [];
+
+    // Access Control Logic
+    if (currentUserRole === Role.ADMIN) {
+      // Admins cannot see other Admins or Super Admins
+      excludeRoles.push(Role.ADMIN, Role.SUPER_ADMIN);
+    }
+    // Super Admins can see everyone (no exclusions needed)
+
+    const result = await userService.getUsers({
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+      search,
+      role,
+      isEmployee: isEmployee === 'true',
+      excludeRoles,
+    });
+
+    res.status(200).json(result);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

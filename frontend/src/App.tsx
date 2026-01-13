@@ -25,14 +25,14 @@ import AdminMenuPage from './pages/admin/AdminMenuPage';
 import AdminTablePage from './pages/admin/AdminTablePage';
 import CategoryPage from './pages/admin/AdminCategoryPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminOrdersPage from './pages/admin/AdminOrdersPage';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminEmployeesPage from './pages/admin/AdminEmployeesPage';
 
 // Staff Pages (Waiter & Kitchen)
 import WaiterPage from './pages/waiter/WaiterPage';
 import TableMapPage from './pages/waiter/TableMapPage';
 import KitchenPage from './pages/kitchen/KitchenPage';
-
-// Placeholder for missing pages
-const OrderManagement = () => <div className="p-6 text-2xl font-bold">Quản lý Đơn hàng</div>;
 
 function App() {
   const connect = useSocketStore(state => state.connect);
@@ -66,7 +66,9 @@ function App() {
           <Route path="categories" element={<CategoryPage />} />
           <Route path="menu" element={<AdminMenuPage />} />
           <Route path="tables" element={<AdminTablePage />} />
-          <Route path="orders" element={<OrderManagement />} />
+          <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="employees" element={<AdminEmployeesPage />} />
         </Route>
 
         {/* Service & Operational Flow */}

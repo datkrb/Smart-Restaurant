@@ -9,19 +9,54 @@ import {
   LogOut,
   ChefHat,
   ChevronRight,
-  Bell,
-  Search,
-  User
+  User,
+  Layers,
+  Users
 } from 'lucide-react';
+
+const SidebarItem = ({ item }: { item: { path: string; name: string; icon: React.ReactNode } }) => (
+  <NavLink
+    to={item.path}
+    className={({ isActive }) => `
+      flex items-center justify-between p-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden
+      ${isActive
+        ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white'
+        : 'hover:bg-white/5 hover:text-white'
+      }
+    `}
+  >
+    {({ isActive }) => (
+      <>
+        <div className="flex items-center gap-3.5 z-10">
+          <span className={`${isActive ? 'text-white' : 'text-slate-400 group-hover:text-orange-400'} transition-colors`}>
+            {item.icon}
+          </span>
+          <span className="font-bold text-sm tracking-wide">{item.name}</span>
+        </div>
+        <ChevronRight 
+          size={14} 
+          className={`z-10 transition-all duration-300 ${
+            isActive 
+              ? 'translate-x-0 opacity-100' 
+              : '-translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100'
+          }`} 
+        />
+      </>
+    )}
+  </NavLink>
+);
 
 const AdminLayout = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { path: '/admin/categories', name: 'Danh mục', icon: <LayoutDashboard size={20} /> },
+    { path: '/admin', name: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+    { path: '/admin/categories', name: 'Danh mục', icon: <Layers size={20} /> },
     { path: '/admin/menu', name: 'Món ăn', icon: <Utensils size={20} /> },
     { path: '/admin/tables', name: 'Quản lý bàn', icon: <TableIcon size={20} /> },
     { path: '/admin/orders', name: 'Đơn hàng', icon: <ClipboardList size={20} /> },
+    { path: '/admin/users', name: 'Quản lý khách', icon: <User size={20} /> },
+    { path: '/admin/employees', name: 'Quản lý nhân viên', icon: <Users size={20} /> },
   ];
 
   return (
@@ -47,27 +82,7 @@ const AdminLayout = () => {
         {/* Navigation Items */}
         <nav className="flex-1 p-4 mt-6 space-y-2">
           {menuItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => `
-                flex items-center justify-between p-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden
-                ${isActive
-                  ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white'
-                  : 'hover:bg-white/5 hover:text-white'
-                }
-              `}
-            >
-              {({ isActive }) => (
-                <>
-                  <div className="flex items-center gap-3.5 z-10">
-                    <span className={`${isActive ? 'text-white' : 'text-slate-400 group-hover:text-orange-400'} transition-colors`}>{item.icon}</span>
-                    <span className="font-bold text-sm tracking-wide">{item.name}</span>
-                  </div>
-                  <ChevronRight size={14} className={`z-10 transition-all duration-300 ${isActive ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100'}`} />
-                </>
-              )}
-            </NavLink>
+            <SidebarItem key={item.path} item={item} />
           ))}
         </nav>
 
