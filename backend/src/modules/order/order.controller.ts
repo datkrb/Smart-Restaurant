@@ -1,5 +1,49 @@
 import { Request, Response } from "express";
 import * as orderService from "./order.service";
+import { OrderStatus } from "@prisma/client";
+
+/**
+ * Get all orders (Admin/Staff)
+ */
+export const getOrders = async (req: Request, res: Response) => {
+    try {
+        const { page, limit, status, sortBy, sortOrder } = req.query as any;
+
+        const result = await orderService.getOrders({
+            page,
+            limit,
+            status: status as OrderStatus,
+            sortBy,
+            sortOrder,
+        });
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: "Lỗi lấy danh sách đơn hàng" });
+    }
+};
+
+/**
+ * Update order status (Approve/Reject/Ready/Completed)
+ */
+export const updateOrderStatus = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        const updatedOrder = await orderService.updateOrderStatus(id, status as OrderStatus);
+
+        // Realtime notify
+        const { io } = require("../../app");
+        if (io) {
+            io.emit("order_status_updated", updatedOrder);
+        }
+
+        res.json(updatedOrder);
+    } catch (error) {
+        res.status(500).json({ error: "Không thể cập nhật trạng thái đơn hàng" });
+    }
+};
 
 /**
  * Create a new order (Guest creates from cart)

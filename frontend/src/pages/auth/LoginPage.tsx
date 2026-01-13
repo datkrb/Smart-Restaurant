@@ -36,7 +36,7 @@ const LoginPage = () => {
         console.log(data.user);
         toast.success("Welcome back!");
         if(data.user.role === "ADMIN" || data.user.role === "SUPER_ADMIN") {
-          navigate('/admin/dashboard');
+          navigate('/admin');
         } else {
           navigate('/');
         }
