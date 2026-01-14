@@ -8,7 +8,9 @@ import { ui } from '../../utils/swalHelper';
 import { menuApi } from '../../api/menuApi';
 import { categoryApi } from '../../api/categoryApi';
 import { CreateMenuItemRequest } from '../../types/menu.types';
-import { Edit, Trash2, Plus, X, Search, Filter, Camera } from 'lucide-react'; // Import icons if available, assuming lucide-react is used in project
+import ModifierManager from '../../modules/admin/ModifierManager';
+import MenuItemDetail from '../../modules/admin/MenuItemDetail';
+import { Layers, Edit, Trash2, Plus, X, Search, Filter } from 'lucide-react';
 
 const MySwal = withReactContent(Swal);
 
@@ -17,8 +19,10 @@ export default function AdminMenuPage() {
   const [categories, setCategories] = useState<Category[]>([]); 
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Separate state for edit modal
-  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingModifiersItem, setEditingModifiersItem] = useState<MenuItem | null>(null);
+  const [viewingItem, setViewingItem] = useState<MenuItem | null>(null);
+
   const [newItem, setNewItem] = useState<CreateMenuItemRequest>({
     name: '',
     price: 0,
@@ -28,50 +32,67 @@ export default function AdminMenuPage() {
     status: 'AVAILABLE'
   });
 
-  // Edit form state
   const [editFormData, setEditFormData] = useState<Partial<CreateMenuItemRequest>>({});
+
+  // Filters & Sort State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 10;
+
+  // Debounce search
+  const [debouncedSearch] = useDebounce(searchTerm, 500);
+
   const fetchData = async () => {
     try {
       const [menuRes, catsRes] = await Promise.all([
-        menuApi.getMenuItems({ limit: 1000 }), 
+        menuApi.getMenuItems({ 
+            page,
+            limit, 
+            search: debouncedSearch,
+            categoryId: selectedCategory || undefined,
+            sortBy: sortBy
+        }), 
         categoryApi.getAllCategories()
       ]);
-      console.log("DEBUG: Menu API Response:", menuRes);
-
-      // Ensure we treat the response correctly
-      // Ensure we treat the response correctly
-      // Api unwraps data, so menuRes is the body { message, menuItems: { data: [], meta: ... } }
+      
       if (menuRes && menuRes.menuItems) {
           setItems(menuRes.menuItems.data || []);
+          if (menuRes.menuItems.meta) {
+              setTotalPages(menuRes.menuItems.meta.totalPages);
+          }
       }
       
       setCategories(Array.isArray(catsRes) ? catsRes : []);
-
-      if (editingItem) {
-        // Refresh editing item if it exists
-        const freshItem = menuRes?.menuItems?.data?.find((i: MenuItem) => i.id === editingItem.id);
-        if (freshItem) {
-            setEditingItem(freshItem);
-            // Also update edit form data if open
-            setEditFormData({
-                name: freshItem.name,
-                price: freshItem.price,
-                description: freshItem.description,
-                categoryId: freshItem.categoryId,
-                isChefRecommended: freshItem.isChefRecommended,
-                status: freshItem.status
-            });
-        }
-      }
     } catch (error) {
        console.error("Error fetching data", error);
-       // ui.alertError("Lỗi tải dữ liệu"); // Suppress error on init to avoid spam if DB is empty
     }
   };
 
   useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, selectedCategory, sortBy]);
+
+  useEffect(() => {
     fetchData();
-  }, []);
+  }, [page, debouncedSearch, selectedCategory, sortBy]);
+
+  function useDebounce<T>(value: T, delay: number): [T] {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+      const handler = setTimeout(() => {
+        setDebouncedValue(value);
+      }, delay);
+      return () => {
+        clearTimeout(handler);
+      };
+    }, [value, delay]);
+    return [debouncedValue];
+  }
 
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,11 +170,53 @@ export default function AdminMenuPage() {
           onClick={() => setIsModalOpen(true)}
           className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2.5 rounded-lg hover:bg-orange-700 transition-all font-medium shadow-sm hover:shadow-md"
         >
-          <span>+ Thêm món mới</span>
+          <Plus size={18} />
+          <span>Thêm món mới</span>
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-100">
+      {/* FILTER BAR */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6 sticky top-0 bg-white z-10 py-2">
+        <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input 
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                placeholder="Tìm kiếm món ăn..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+            />
+        </div>
+
+        <div className="w-full md:w-48 relative">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <select 
+                className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none appearance-none bg-white"
+                value={selectedCategory}
+                onChange={e => setSelectedCategory(e.target.value)}
+            >
+                <option value="">Tất cả danh mục</option>
+                {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+            </select>
+        </div>
+
+        <div className="w-full md:w-48">
+            <select 
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white"
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value)}
+            >
+                <option value="newest">Mới nhất</option>
+                <option value="price_ASC">Giá tăng dần</option>
+                <option value="price_DESC">Giá giảm dần</option>
+                <option value="name_ASC">Tên A-Z</option>
+                <option value="name_DESC">Tên Z-A</option>
+            </select>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded-lg border border-gray-100 mb-6">
         <table className="w-full text-left border-collapse">
           <thead className="bg-gray-50/50">
             <tr className="border-b border-gray-100 text-gray-500 uppercase text-xs tracking-wider">
@@ -161,6 +224,7 @@ export default function AdminMenuPage() {
               <th className="p-4 font-semibold">Tên món</th>
               <th className="p-4 font-semibold">Danh mục</th>
               <th className="p-4 font-semibold">Giá bán</th>
+              <th className="p-4 font-semibold text-center">Topping / Size</th>
               <th className="p-4 font-semibold text-center">Trạng thái</th>
               <th className="p-4 font-semibold text-right">Thao tác</th>
             </tr>
@@ -169,7 +233,11 @@ export default function AdminMenuPage() {
             {items.map(item => (
               <tr key={item.id} className="hover:bg-gray-50/80 transition-colors group">
                 <td className="p-3">
-                  <div className="w-16 h-16 rounded-lg bg-gray-100 overflow-hidden border border-gray-200 flex items-center justify-center relative">
+                  <div 
+                    title="Click để xem chi tiết"
+                    onClick={() => setViewingItem(item)}
+                    className="w-16 h-16 rounded-lg bg-gray-100 overflow-hidden border border-gray-200 flex items-center justify-center relative cursor-pointer hover:ring-2 hover:ring-orange-500 transition-all"
+                   >
                     {item.photos?.some(p => p.isPrimary) ? (
                       <img
                         src={item.photos.find(p => p.isPrimary)?.url}
@@ -182,7 +250,13 @@ export default function AdminMenuPage() {
                   </div>
                 </td>
                 <td className="p-4">
-                    <div className="font-medium text-gray-900">{item.name}</div>
+                    <div 
+                        title="Click để xem chi tiết"
+                        onClick={() => setViewingItem(item)}
+                        className="font-medium text-gray-900 cursor-pointer hover:text-orange-600 transition-colors"
+                    >
+                        {item.name}
+                    </div>
                     {item.isChefRecommended && (
                         <span className="inline-block px-2 py-0.5 rounded text-[10px] bg-yellow-100 text-yellow-700 font-medium mt-1">
                             Chef's Choice
@@ -195,6 +269,18 @@ export default function AdminMenuPage() {
                 <td className="p-4 font-bold text-orange-600">
                     {item.price.toLocaleString()}đ
                 </td>
+
+                 {/* MODIFIERS COLUMN */}
+                 <td className="p-4 text-center">
+                    <button 
+                         onClick={() => setEditingModifiersItem(item)}
+                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg text-xs font-medium transition-colors border border-purple-100"
+                    >
+                        <Layers size={14} />
+                        {(item.modifierGroups?.length || 0) > 0 ? `${item.modifierGroups?.length} nhóm` : 'Thêm'}
+                    </button>
+                </td>
+
                 <td className="p-4 text-center">
                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                        item.status === 'AVAILABLE' ? 'bg-green-100 text-green-700' :
@@ -211,13 +297,13 @@ export default function AdminMenuPage() {
                         onClick={() => openEditModal(item)}
                         className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline flex items-center gap-1"
                     >
-                        Sửa
+                        <Edit size={16} /> <span className="hidden md:inline">Sửa</span>
                     </button>
                     <button
                         onClick={() => handleDeleteItem(item.id)}
                         className="text-red-500 hover:text-red-700 text-sm font-medium hover:underline flex items-center gap-1"
                     >
-                        Xóa
+                        <Trash2 size={16} /> <span className="hidden md:inline">Xóa</span>
                     </button>
                   </div>
                 </td>
@@ -233,17 +319,54 @@ export default function AdminMenuPage() {
         )}
       </div>
 
-      {/* MODAL EDIT */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 py-4">
+            <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 bg-white border border-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-50 text-sm font-medium transition-colors"
+            >
+                Trước
+            </button>
+            <span className="text-sm font-medium text-gray-600">
+                Trang {page} / {totalPages}
+            </span>
+            <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-4 py-2 bg-white border border-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-50 text-sm font-medium transition-colors"
+            >
+                Sau
+            </button>
+        </div>
+      )}
+
+      {/* ITEM DETAIL MODAL */}
+      {viewingItem && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden relative">
+                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <h2 className="text-xl font-bold text-gray-800">Chi tiết món ăn</h2>
+                    <button onClick={() => setViewingItem(null)} className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} /></button>
+                 </div>
+                 
+                 <div className="overflow-y-auto p-6">
+                    <MenuItemDetail item={viewingItem} />
+                 </div>
+            </div>
+        </div>
+      )}
+
+      {/* EDIT MODAL */}
       {isEditModalOpen && editingItem && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
              <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <h2 className="text-xl font-bold text-gray-800">Chỉnh sửa món</h2>
-                <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+                <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-600"> <X size={20} /> </button>
              </div>
              
              <div className="overflow-y-auto p-6 space-y-8">
-                {/* Photo Manager Section */}
                 <section>
                     <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Hình ảnh</h3>
                     <div className="bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300">
@@ -255,7 +378,6 @@ export default function AdminMenuPage() {
                     </div>
                 </section>
 
-                {/* Edit Form Section */}
                 <section>
                     <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Thông tin chi tiết</h3>
                     <form id="edit-form" onSubmit={handleUpdateItem} className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -350,7 +472,7 @@ export default function AdminMenuPage() {
         </div>
       )}
 
-      {/* MODAL ADD */}
+      {/* ADD MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <form onSubmit={handleAddItem} className="bg-white rounded-xl w-full max-w-lg shadow-2xl p-6 relative">
@@ -359,7 +481,7 @@ export default function AdminMenuPage() {
                 onClick={() => setIsModalOpen(false)} 
                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
             >
-                ✕
+                <X size={20} />
             </button>
             
             <h2 className="text-xl font-bold text-gray-800 mb-6">Thêm món ăn mới</h2>
@@ -444,6 +566,26 @@ export default function AdminMenuPage() {
           </form>
         </div>
       )}
+
+      {/* MODIFIERS MODAL */}
+      {editingModifiersItem && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden relative">
+                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-800">Topping / Tùy chọn</h2>
+                        <p className="text-sm text-gray-500">Cho món: <span className="font-semibold text-gray-700">{editingModifiersItem.name}</span></p>
+                    </div>
+                    <button onClick={() => setEditingModifiersItem(null)} className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} /></button>
+                 </div>
+                 
+                 <div className="overflow-y-auto p-6 bg-gray-50/50">
+                    <ModifierManager menuItemId={editingModifiersItem.id} />
+                 </div>
+            </div>
+        </div>
+      )}
+
     </div>
   );
 }

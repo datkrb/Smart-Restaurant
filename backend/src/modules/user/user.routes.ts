@@ -29,4 +29,18 @@ router.patch(
   userController.updateUserStatus
 );
 
+// Update User (Only Admin and Super Admin)
+router.patch(
+  "/:id",
+  roleGuard([Role.ADMIN, Role.SUPER_ADMIN]),
+  userController.updateUser
+);
+
+// Delete User (Only Admin and Super Admin)
+router.delete(
+  "/:id",
+  roleGuard([Role.ADMIN, Role.SUPER_ADMIN]),
+  userController.deleteUser
+);
+
 export default router;

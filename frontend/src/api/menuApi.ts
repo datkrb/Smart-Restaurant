@@ -42,11 +42,28 @@ export const menuApi = {
     },
 
     // 7. Modifiers
+    // 7. Modifiers
     createModifierGroup: (data: CreateModifierGroupRequest) => {
         return axiosClient.post<ModifierGroup>("/menu/modifiers/groups", data) as unknown as Promise<ModifierGroup>;
     },
 
+    updateModifierGroup: (id: string, data: { name?: string; required?: boolean }) => {
+        return axiosClient.patch<ModifierGroup>(`/menu/modifiers/groups/${id}`, data) as unknown as Promise<ModifierGroup>;
+    },
+
+    deleteModifierGroup: (id: string) => {
+        return axiosClient.delete<{ message: string }>(`/menu/modifiers/groups/${id}`) as unknown as Promise<{ message: string }>;
+    },
+
     createModifierOption: (data: CreateModifierOptionRequest) => {
         return axiosClient.post<ModifierOption>("/menu/modifiers/options", data) as unknown as Promise<ModifierOption>;
+    },
+
+    updateModifierOption: (id: string, data: { name?: string; priceDelta?: number }) => {
+        return axiosClient.patch<ModifierOption>(`/menu/modifiers/options/${id}`, data) as unknown as Promise<ModifierOption>;
+    },
+    
+    deleteModifierOption: (id: string) => {
+        return axiosClient.delete<{ message: string }>(`/menu/modifiers/options/${id}`) as unknown as Promise<{ message: string }>;
     }
 };

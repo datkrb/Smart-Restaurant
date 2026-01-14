@@ -131,3 +131,15 @@ export const updateUserById = async (id: string, data: Partial<User>) => {
     },
   });
 };
+
+// delete user by id
+export const deleteUser = async (id: string) => {
+  return await prisma.user.delete({
+    where: { id },
+    select: {
+      id: true,
+      email: true,
+      fullName: true,
+    },
+  });
+};

@@ -15,6 +15,11 @@ menuRouter.post(
   roleGuard([Role.ADMIN, Role.SUPER_ADMIN]),
   menuController.createCategory
 );
+menuRouter.patch(
+  "/categories/:id",
+  roleGuard([Role.ADMIN, Role.SUPER_ADMIN]),
+  menuController.updateCategory
+);
 menuRouter.get("/categories", menuController.getCategories);
 menuRouter.get("/categories/:id", menuController.getCategoryById);
 menuRouter.delete(
@@ -93,6 +98,30 @@ menuRouter.post(
   "/modifiers/options",
   roleGuard([Role.ADMIN, Role.SUPER_ADMIN, Role.KITCHEN]),
   menuController.createModifierOption
+);
+
+// Update/Delete Modifier Group
+menuRouter.patch(
+  "/modifiers/groups/:id",
+  roleGuard([Role.ADMIN, Role.SUPER_ADMIN]),
+  menuController.updateModifierGroup
+);
+menuRouter.delete(
+  "/modifiers/groups/:id",
+  roleGuard([Role.ADMIN, Role.SUPER_ADMIN]),
+  menuController.deleteModifierGroup
+);
+
+// Update/Delete Modifier Option
+menuRouter.patch(
+  "/modifiers/options/:id",
+  roleGuard([Role.ADMIN, Role.SUPER_ADMIN]),
+  menuController.updateModifierOption
+);
+menuRouter.delete(
+  "/modifiers/options/:id",
+  roleGuard([Role.ADMIN, Role.SUPER_ADMIN]),
+  menuController.deleteModifierOption
 );
 
 export default menuRouter;

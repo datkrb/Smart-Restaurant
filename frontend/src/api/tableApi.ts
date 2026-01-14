@@ -14,10 +14,10 @@ export const tableApi = {
         return axiosClient.post<Table>("/tables", { name, capacity }) 
     },
 
-    // 3. Update Table Status (Active/Inactive)
+    // 3. Update Table (Status, Name, Capacity)
     // Response: Updated Table
-    updateTableStatus: (id: string, isActive: boolean) => {
-        return axiosClient.patch<Table>(`/tables/${id}`, { isActive }) 
+    updateTable: (id: string, data: Partial<Table>) => {
+        return axiosClient.patch<Table>(`/tables/${id}`, data) 
     },
 
     // 4. Get Table QR Code

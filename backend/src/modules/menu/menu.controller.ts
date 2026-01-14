@@ -17,6 +17,22 @@ export const createCategory = async (req: Request, res: Response) => {
   }
 };
 
+// Update category
+export const updateCategory = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: "Category name is required" });
+    }
+
+    const category = await menuService.updateCategory(id, name);
+    res.status(200).json(category);
+  } catch (error) {
+    res.status(400).json({ message: "Error updating category", error });
+  }
+};
+
 // Get all categories
 export const getCategories = async (req: Request, res: Response) => {
   try {
@@ -47,8 +63,10 @@ export const deleteCategoryById = async (req: Request, res: Response) => {
     const { id } = req.params;
     await menuService.deleteCategoryById(id);
     res.status(200).json({ message: "Category deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Error deleting category", error });
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: error.message || "Error deleting category", error });
   }
 };
 
@@ -81,8 +99,8 @@ export const deleteMenuItem = async (req: Request, res: Response) => {
     const { id } = req.params;
     await menuService.deleteMenuItem(id);
     res.status(200).json({ message: "Menu item deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Error deleting menu item", error });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message || "Error deleting menu item", error });
   }
 };
 //get menu items by category id
@@ -184,6 +202,52 @@ export const createModifierOption = async (req: Request, res: Response) => {
       parseFloat(priceDelta) // Ép kiểu số cho giá tiền cộng thêm
     );
     res.status(201).json(option);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const updateModifierGroup = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const data = req.body; // { name, required }
+    const group = await menuService.updateModifierGroup(id, data);
+    res.status(200).json(group);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const deleteModifierGroup = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await menuService.deleteModifierGroup(id);
+    res.status(200).json({ message: "Modifier group deleted" });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const updateModifierOption = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, priceDelta } = req.body;
+    const data: any = {};
+    if (name) data.name = name;
+    if (priceDelta !== undefined) data.priceDelta = parseFloat(priceDelta);
+
+    const option = await menuService.updateModifierOption(id, data);
+    res.status(200).json(option);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const deleteModifierOption = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await menuService.deleteModifierOption(id);
+    res.status(200).json({ message: "Modifier option deleted" });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
