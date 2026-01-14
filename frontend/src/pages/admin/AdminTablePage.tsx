@@ -60,9 +60,13 @@ export default function AdminTablePage() {
     e.preventDefault();
     if (!editingTable) return;
     try {
-      await tableApi.updateTableStatus(editingTable.id, editingTable.isActive);
+      await tableApi.updateTable(editingTable.id, {
+        name: editingTable.name,
+        capacity: editingTable.capacity,
+        isActive: editingTable.isActive,
+      });
       setIsEditModalOpen(false);
-      ui.alertSuccess("Đã cập nhật trạng thái bàn");
+      ui.alertSuccess("Đã cập nhật thông tin bàn");
       fetchData();
     } catch (err) {
       ui.alertError("Lỗi cập nhật bàn");
@@ -219,6 +223,26 @@ export default function AdminTablePage() {
             <p className="text-sm text-gray-500 mb-6">Hiện tại chỉ hỗ trợ cập nhật trạng thái hoạt động.</p>
             
             <div className="space-y-4">
+               <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên bàn</label>
+                  <input
+                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                    value={editingTable.name}
+                    onChange={e => setEditingTable({ ...editingTable, name: e.target.value })}
+                    required
+                  />
+               </div>
+               <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Sức chứa</label>
+                  <input
+                    type="number"
+                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                    value={editingTable.capacity}
+                    onChange={e => setEditingTable({ ...editingTable, capacity: Number(e.target.value) })}
+                    required
+                    min={1}
+                  />
+               </div>
                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
                   <select

@@ -83,3 +83,28 @@ export const updateUserStatus = async (req: Request, res: Response) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+export const updateUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    
+    // Validate role update permissions if necessary
+    // For now, allow admin to update any field provided in body
+
+    const updatedUser = await userService.updateUserById(id, updateData);
+    res.status(200).json({ message: "User updated successfully", data: updatedUser });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await userService.deleteUser(id);
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};

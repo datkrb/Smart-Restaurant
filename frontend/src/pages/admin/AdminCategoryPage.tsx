@@ -57,8 +57,9 @@ export default function CategoryPage() {
     try {
       await categoryApi.deleteCategory(id);
       fetchCategories();
-    } catch (error) {
-       alert("Lỗi xóa danh mục");
+    } catch (error: any) {
+      const msg = error.response?.data?.message || "Lỗi xóa danh mục";
+      alert(msg);
     }
   }
 

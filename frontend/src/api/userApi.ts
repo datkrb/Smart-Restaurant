@@ -7,4 +7,16 @@ export const userApi = {
       params,
     }) as unknown as Promise<GetUsersResponse>;
   },
+
+  createUser: async (data: any) => {
+    return axiosClient.post("/users", data);
+  },
+
+  updateUser: async (id: string, data: any) => {
+    return axiosClient.patch(`/users/${id}`, data);
+  },
+
+  deleteUser: async (id: string) => {
+    return axiosClient.delete(`/users/${id}`);
+  },
 };

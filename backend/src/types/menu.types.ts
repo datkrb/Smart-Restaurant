@@ -6,6 +6,8 @@ export enum SortOption {
   price_ASC = "price_ASC",
   price_DESC = "price_DESC",
   newest = "newest",
+  name_ASC = "name_ASC",
+  name_DESC = "name_DESC",
 }
 
 export interface MenuItemOptions {
