@@ -4,6 +4,8 @@ import userRoutes from "./user/user.routes";
 import tableRoutes from "./table/table.routes";
 import menuRoutes from "./menu/menu.routes";
 
+import reportRoutes from "./report/report.route";
+
 const router = Router();
 
 // Gắn route Auth vào đường dẫn /auth
@@ -12,6 +14,7 @@ router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/tables", tableRoutes);
 router.use("/menu", menuRoutes);
+router.use("/reports", reportRoutes);
 
 export default router;
 
