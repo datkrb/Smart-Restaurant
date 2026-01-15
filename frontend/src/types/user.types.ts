@@ -23,6 +23,7 @@ export interface GetUsersParams {
   search?: string;
   role?: Role;
   isEmployee?: boolean;
+  isActive?: boolean;
 }
 
 export interface PaginationMetadata {
