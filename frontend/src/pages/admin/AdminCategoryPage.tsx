@@ -1,12 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { categoryApi } from '../../api/categoryApi';
 import { Category } from '../../types/category.types';
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 export default function CategoryPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  // Search and Sort states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: 'name' | 'menuItems'; direction: 'asc' | 'desc' } | null>(null);
 
   const fetchCategories = async () => {
     try {
@@ -63,28 +68,94 @@ export default function CategoryPage() {
     }
   }
 
+  const handleSort = (key: 'name' | 'menuItems') => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const filteredAndSortedCategories = useMemo(() => {
+    let filtered = [...categories];
+
+    if (searchTerm) {
+      const lowerTerm = searchTerm.toLowerCase();
+      filtered = filtered.filter(cat => cat.name.toLowerCase().includes(lowerTerm));
+    }
+
+    if (sortConfig) {
+      filtered.sort((a, b) => {
+        if (sortConfig.key === 'name') {
+           // Use localeCompare for correct Vietnamese sorting
+           return sortConfig.direction === 'asc' 
+             ? a.name.localeCompare(b.name)
+             : b.name.localeCompare(a.name);
+        }
+        if (sortConfig.key === 'menuItems') {
+           const aCount = a.menuItems?.length || 0;
+           const bCount = b.menuItems?.length || 0;
+           return sortConfig.direction === 'asc' ? aCount - bCount : bCount - aCount;
+        }
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [categories, searchTerm, sortConfig]);
+
+  const renderSortIcon = (key: 'name' | 'menuItems') => {
+    if (sortConfig?.key !== key) return <ArrowUpDown size={14} className="text-gray-400" />;
+    return sortConfig.direction === 'asc' 
+      ? <ArrowUp size={14} className="text-orange-600" />
+      : <ArrowDown size={14} className="text-orange-600" />;
+  };
+
   return (
     <div className="bg-white rounded-xl shadow p-6">
-      <div className="flex justify-between mb-6">
+      <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold">Danh sách danh mục</h2>
-        <button 
-          onClick={() => handleOpenModal()}
-          className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
-        >
-          + Thêm mới
-        </button>
+        <div className="flex gap-4">
+             <input
+              type="text"
+              placeholder="Tìm kiếm danh mục..."
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <button 
+              onClick={() => handleOpenModal()}
+              className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
+            >
+              + Thêm mới
+            </button>
+        </div>
       </div>
       <table className="w-full text-left">
         <thead>
           <tr className="border-b text-gray-500 uppercase text-sm">
-            <th className="pb-3">Tên</th>
-            <th className="pb-3 text-center">Số món</th>
+            <th 
+                className="pb-3 cursor-pointer hover:text-gray-700 select-none group"
+                onClick={() => handleSort('name')}
+            >
+                <div className="flex items-center gap-1">
+                    Tên {renderSortIcon('name')}
+                </div>
+            </th>
+            <th 
+                className="pb-3 text-center cursor-pointer hover:text-gray-700 select-none group"
+                onClick={() => handleSort('menuItems')}
+            >
+                <div className="flex items-center justify-center gap-1">
+                    Số món {renderSortIcon('menuItems')}
+                </div>
+            </th>
             <th className="pb-3 text-center">Trạng thái</th>
             <th className="pb-3 text-right">Thao tác</th>
           </tr>
         </thead>
         <tbody className="divide-y">
-          {categories.map((cat) => (
+          {filteredAndSortedCategories.map((cat) => (
             <tr key={cat.id} className="hover:bg-gray-50 transition-colors">
               <td className="py-4 font-medium">{cat.name}</td>
               <td className="py-4 text-center">{cat.menuItems?.length || 0}</td>
@@ -109,6 +180,13 @@ export default function CategoryPage() {
               </td>
             </tr>
           ))}
+          {filteredAndSortedCategories.length === 0 && (
+             <tr>
+                <td colSpan={4} className="py-8 text-center text-gray-500">
+                    {searchTerm ? "Không tìm thấy danh mục phù hợp" : "Chưa có danh mục nào"}
+                </td>
+             </tr>
+          )}
         </tbody>
       </table>
 

@@ -1,23 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { userApi } from '../../api/userApi';
 import { Role, User } from '../../types/user.types';
-import { Search, Plus, Trash2, Edit } from 'lucide-react';
-import { Modal, Form, Input, Select, Button, Tag, Space, App, message } from 'antd'; // Assuming Ant Design usage as seen in other files (AdminTablePage)
-// If AntD is not used, I should stick to custom UI or standard HTML, 
-// but user history showed "AdminTablePage" using it or similar.
-// Wait, AdminTablePage was viewed but I didn't see imports. 
-// "Troubleshoot Payment Success Error" mentioned Ant Design Modal props.
-// Let's assume Ant Design is available since it was mentioned in history.
-// However, to be safe and consistent with other pages I just wrote (AdminLayout, AdminOrdersPage - using tailwind),
-// I will build a simple custom Modal using Tailwind if AntD is not 100% sure or to keep it lightweight.
-// actually let's use a simple custom modal to avoid "antd" missing errors if not installed.
+import { Search, Plus, Trash2, Edit, Filter } from 'lucide-react';
+import { Modal, Form, Input, Select, Button, Tag, Space, App, message } from 'antd'; // Keeping imports as requested
 
 const AdminEmployeesPage = () => {
-    const [employees, setEmployees] = useState<User[]>([]);
+    const [allEmployees, setAllEmployees] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
+    
+    // Filter & Sort State
     const [search, setSearch] = useState('');
+    const [filterRole, setFilterRole] = useState<string>('');
+    const [filterStatus, setFilterStatus] = useState<string>('');
+    const [sortBy, setSortBy] = useState<string>('createdAt_desc');
+    
+    // Pagination State
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
+    const itemsPerPage = 10;
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,21 +31,18 @@ const AdminEmployeesPage = () => {
 
     useEffect(() => {
         fetchEmployees();
-    }, [page, search]);
+    }, []);
 
     const fetchEmployees = async () => {
         setLoading(true);
         try {
+            // Fetch all employees (limit 1000) for client-side processing
             const response = await userApi.getUsers({
                 isEmployee: true,
-                page,
-                limit: 10,
-                search,
-                sortBy: 'role',
-                sortOrder: 'asc'
+                page: 1,
+                limit: 1000,
             });
-            setEmployees(response.data);
-            setTotalPages(response.pagination.totalPages);
+            setAllEmployees(response.data);
         } catch (error) {
             console.error("Failed to fetch employees", error);
         } finally {
@@ -54,11 +50,60 @@ const AdminEmployeesPage = () => {
         }
     };
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
+    // Client-side Filtering & Sorting
+    const processedEmployees = useMemo(() => {
+        let result = [...allEmployees];
+
+        // 1. Role Filter
+        if (filterRole) {
+            result = result.filter(u => u.role === filterRole);
+        }
+
+        // 2. Status Filter
+        if (filterStatus !== '') {
+            const isActive = filterStatus === 'true';
+            result = result.filter(u => u.isActive === isActive);
+        }
+
+        // 3. Search Filter
+        if (search.trim()) {
+            const lowerSearch = search.toLowerCase();
+            result = result.filter(u => 
+                u.fullName.toLowerCase().includes(lowerSearch) || 
+                u.email.toLowerCase().includes(lowerSearch)
+            );
+        }
+
+        // 4. Sorting
+        result.sort((a, b) => {
+            switch (sortBy) {
+                case 'createdAt_desc':
+                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                case 'createdAt_asc':
+                    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                case 'fullName_asc':
+                    return a.fullName.localeCompare(b.fullName);
+                case 'fullName_desc':
+                    return b.fullName.localeCompare(a.fullName);
+                 case 'role_asc':
+                    return a.role.localeCompare(b.role);
+                default:
+                    return 0;
+            }
+        });
+
+        return result;
+    }, [allEmployees, filterRole, filterStatus, search, sortBy]);
+
+    // Pagination Logic
+    const totalPages = Math.ceil(processedEmployees.length / itemsPerPage);
+    const paginatedEmployees = processedEmployees.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
+    // Reset page on filter change
+    useEffect(() => {
         setPage(1);
-        fetchEmployees();
-    };
+    }, [search, filterRole, filterStatus]);
+
 
     const handleDelete = async (id: string) => {
         if (!window.confirm("Bạn có chắc muốn xóa nhân viên này?")) return;
@@ -115,38 +160,78 @@ const AdminEmployeesPage = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-gray-800 tracking-tight">Quản lý Nhân viên</h1>
-                    <p className="text-sm text-gray-500 font-medium mt-1">Quản lý đội ngũ nhân viên và phân quyền</p>
+                    <p className="text-sm text-gray-500 font-medium mt-1">Quản lý đội ngũ nhân viên và phân quyền (Tổng: {processedEmployees.length})</p>
                 </div>
-
-                <div className="flex gap-3">
-                    <form onSubmit={handleSearch} className="relative">
-                        <input
-                            type="text"
-                            placeholder="Tìm kiếm..."
-                            className="pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-64"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                        <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-                    </form>
-                    <button
+                <button
                         onClick={handleCreate}
-                        className="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-orange-600/20 whitespace-nowrap flex items-center gap-2"
+                        className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2.5 rounded-lg hover:bg-orange-700 transition-all font-medium shadow-sm hover:shadow-md whitespace-nowrap"
                     >
                         <Plus size={18} /> Thêm nhân viên
                     </button>
-                </div>
             </div>
+
+            {/* FILTER BAR */}
+            <div className="flex flex-col md:flex-row gap-4 mb-6 sticky top-0 bg-white z-10 py-2">
+                 <div className="flex-1 relative">
+                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                     <input 
+                         className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                         placeholder="Tìm kiếm nhân viên (Tên, Email)..."
+                         value={search}
+                         onChange={(e) => setSearch(e.target.value)}
+                     />
+                 </div>
+
+                 <div className="w-full md:w-40 relative">
+                     <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                     <select 
+                         className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none appearance-none bg-white"
+                         value={filterRole}
+                         onChange={e => setFilterRole(e.target.value)}
+                     >
+                         <option value="">Tất cả vai trò</option>
+                         <option value={Role.WAITER}>Phục vụ</option>
+                         <option value={Role.KITCHEN}>Bếp</option>
+                         <option value={Role.ADMIN}>Quản lý</option>
+                     </select>
+                 </div>
+
+                 <div className="w-full md:w-40 relative">
+                     <select 
+                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none appearance-none bg-white"
+                         value={filterStatus}
+                         onChange={e => setFilterStatus(e.target.value)}
+                     >
+                         <option value="">Tất cả trạng thái</option>
+                         <option value="true">Active</option>
+                         <option value="false">Inactive</option>
+                     </select>
+                 </div>
+
+                 <div className="w-full md:w-40">
+                     <select 
+                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white"
+                         value={sortBy}
+                         onChange={e => setSortBy(e.target.value)}
+                     >
+                          <option value="createdAt_desc">Mới nhất</option>
+                          <option value="createdAt_asc">Cũ nhất</option>
+                          <option value="fullName_asc">Tên A-Z</option>
+                          <option value="fullName_desc">Tên Z-A</option>
+                          <option value="role_asc">Vai trò</option>
+                     </select>
+                 </div>
+           </div>
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 {loading ? (
                     <div className="p-12 flex justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
                     </div>
-                ) : employees.length === 0 ? (
+                ) : paginatedEmployees.length === 0 ? (
                     <div className="p-12 text-center text-gray-500">
                         Không tìm thấy nhân viên nào.
                     </div>
@@ -163,7 +248,7 @@ const AdminEmployeesPage = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {employees.map((user) => (
+                                {paginatedEmployees.map((user) => (
                                     <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="font-bold text-gray-900">{user.fullName}</div>
@@ -193,7 +278,7 @@ const AdminEmployeesPage = () => {
                         </table>
                     </div>
                 )}
-                 {/* Pagination logic ... (keep existing) */}
+                 {/* Pagination logic */}
                  {!loading && totalPages > 1 && (
                     <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
                         <button
@@ -239,7 +324,7 @@ const AdminEmployeesPage = () => {
                                     className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-orange-500 outline-none"
                                     value={formData.email}
                                     onChange={e => setFormData({...formData, email: e.target.value})}
-                                    disabled={!!editingUser} // Email usually immutable or handled carefully
+                                    disabled={!!editingUser} 
                                 />
                             </div>
                             <div>
