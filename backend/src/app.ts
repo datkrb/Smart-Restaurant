@@ -10,6 +10,10 @@ import { errorHandler } from "./shared/middlewares/errorHandler";
 import router from "./modules/registerRoutes";
 
 const app = express();
+
+import { stripeWebhook } from './modules/payment/payment.controller';
+// Dùng express.raw cho route webhook cụ thể
+app.post('/api/v1/payment/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 const server = http.createServer(app);
 // Socket.IO được gắn vào HTTP server để hỗ trợ realtime (websockets).
 const io = new SocketIOServer(server, {
