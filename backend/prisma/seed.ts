@@ -186,6 +186,92 @@ async function main() {
   }
   console.log("🍔 50 Menu Items created");
 
+  // =========================
+  // SEED ORDERS (100)
+  // =========================
+  // Fetch items and tables to link
+  const allItems = await prisma.menuItem.findMany();
+  const allTables = await prisma.table.findMany();
+  
+  for (let i = 0; i < 100; i++) {
+    // Random Date within last 2 days
+    const date = new Date();
+    date.setDate(date.getDate() - Math.floor(Math.random() * 3)); // Today, yesterday, or day before
+    date.setHours(Math.floor(Math.random() * 14) + 10); // 10 AM to 12 PM
+
+    const isCompleted = Math.random() > 0.1; // 90% completed
+    const orderStatus = isCompleted ? "COMPLETED" : "RECEIVED";
+    const sessionStatus = isCompleted ? "CLOSED" : "OPEN";
+    const tableId = allTables[Math.floor(Math.random() * allTables.length)].id;
+
+    // 1. Create TableSession first
+    const session = await prisma.tableSession.create({
+        data: {
+            tableId: tableId,
+            status: sessionStatus as any,
+            startedAt: date,
+            endedAt: isCompleted ? date : null
+        }
+    });
+
+    // Random items (1-5 items per order)
+    const itemCount = Math.floor(Math.random() * 5) + 1;
+    const orderItemsCreate = [];
+    let totalAmount = 0;
+
+    for (let j = 0; j < itemCount; j++) {
+        const item = allItems[Math.floor(Math.random() * allItems.length)];
+        const quantity = Math.floor(Math.random() * 3) + 1;
+        const price = item.price;
+        totalAmount += price * quantity;
+        orderItemsCreate.push({
+            menuItemId: item.id,
+            quantity: quantity,
+            price: price,
+            note: "Seeded order"
+        });
+    }
+
+    // 2. Create Order linked to Session
+    const order = await prisma.order.create({
+        data: {
+            tableSessionId: session.id,
+            status: orderStatus as any,
+            totalAmount: totalAmount,
+            createdAt: date,
+            items: {
+                create: orderItemsCreate
+            }
+        }
+    });
+
+    // 3. Create Payment if completed
+    if (isCompleted) {
+        await prisma.payment.create({
+            data: {
+                orderId: order.id,
+                amount: totalAmount,
+                method: Math.random() > 0.5 ? "CASH" : "STRIPE", // Random method
+                status: "PAID",
+                paidAt: date
+            }
+        });
+    }
+  }
+  console.log("🧾 100 Orders with Payments created");
+
+  // Create some Active Sessions for "Today"
+  for(let i=0; i<5; i++){
+      await prisma.tableSession.create({
+          data: {
+              tableId: allTables[i].id,
+              status: "OPEN",
+              startedAt: new Date()
+          }
+      })
+  }
+  console.log("🟢 5 Active Sessions created");
+
   console.log("✅ MASSIVE SEED COMPLETED!");
 }
 
