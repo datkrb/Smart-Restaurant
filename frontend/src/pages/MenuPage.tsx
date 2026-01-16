@@ -10,6 +10,7 @@ import CartModal from '../components/CartModal';
 import { useCartStore } from '../store/useCartStore';
 import { useDebounce } from '../hooks/useDebounce';
 import { Footer } from '../components/common/Footer';
+import { Header } from '../components/common/Header';
 
 export default function MenuPage() {
   // --- 1. STATE & HOOKS ---
@@ -110,9 +111,10 @@ export default function MenuPage() {
   // --- 4. RENDER ---
   return (
     <div className="max-w-md mx-auto bg-gray-50 min-h-screen pb-24 flex flex-col">
+      <Header />
 
       {/* HEADER STICKY */}
-      <header className="bg-white shadow-sm sticky top-0 z-20">
+      <header className="bg-white shadow-sm sticky top-[60px] z-20">
         {/* Top Bar: Brand & Search */}
         <div className="p-4 pb-2 space-y-3">
           <div className="flex justify-between items-center">

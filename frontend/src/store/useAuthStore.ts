@@ -1,5 +1,5 @@
-import {create} from "zustand";
-import {User} from "../types/auth.types";
+import { create } from "zustand";
+import { User } from "../types/auth.types";
 
 interface AuthState {
   user: User | null;
@@ -9,6 +9,7 @@ interface AuthState {
 
   login: (user: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
+  syncFromStorage: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => {
@@ -16,7 +17,7 @@ export const useAuthStore = create<AuthState>((set) => {
   const storedAccessToken = localStorage.getItem("accessToken");
   const storedRefreshToken = localStorage.getItem("refreshToken");
 
-  return{
+  return {
     user: (storedUser && storedUser !== "undefined") ? JSON.parse(storedUser) : null,
     accessToken: storedAccessToken,
     refreshToken: storedRefreshToken,
@@ -35,5 +36,26 @@ export const useAuthStore = create<AuthState>((set) => {
       localStorage.removeItem("refreshToken");
       set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
     },
+    syncFromStorage: () => {
+      const user = localStorage.getItem("user");
+      const accessToken = localStorage.getItem("accessToken");
+      const refreshToken = localStorage.getItem("refreshToken");
+
+      set({
+        user: (user && user !== "undefined") ? JSON.parse(user) : null,
+        accessToken,
+        refreshToken,
+        isAuthenticated: !!user
+      });
+    }
   }
-})
+});
+
+// Lắng nghe thay đổi localStorage từ các tab khác
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'user' || e.key === 'accessToken' || e.key === 'refreshToken') {
+      useAuthStore.getState().syncFromStorage();
+    }
+  });
+}

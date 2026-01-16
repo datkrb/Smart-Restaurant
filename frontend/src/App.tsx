@@ -6,6 +6,7 @@ import { useSocketStore } from './store/useSocketStore';
 // Layouts
 import AdminLayout from './layouts/AdminLayout';
 import GuestLayout from './layouts/GuestLayout';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 // Guest Pages
 import EntryPoint from './pages/EntryPoint';
@@ -45,7 +46,7 @@ function App() {
     <>
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
-        
+
         {/* Guest Flow */}
         <Route element={<GuestLayout />}>
           <Route path="/" element={<EntryPoint />} />
@@ -61,7 +62,11 @@ function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Administration Flow */}
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route path="/admin" element={
+          <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }>
           <Route index element={<AdminDashboardPage />} />
           <Route path="categories" element={<CategoryPage />} />
           <Route path="menu" element={<AdminMenuPage />} />
