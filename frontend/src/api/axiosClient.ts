@@ -29,11 +29,11 @@ axiosClient.interceptors.response.use(
     return response.data
   },
   error => {
-    if(error.response.status === 401){
+    if (error.response && error.response.status === 401) {
       localStorage.removeItem("accessToken")
       localStorage.removeItem("refreshToken")
       localStorage.removeItem("user")
-      
+      // Optional: Redirect to login or dispatch clean up action
     }
     return Promise.reject(error)
   }

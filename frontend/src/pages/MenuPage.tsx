@@ -42,7 +42,10 @@ export default function MenuPage() {
 
   // Load Categories lúc đầu
   useEffect(() => {
-    guestApi.getCategories().then(res => setCategories(res as any));
+    guestApi.getCategories().then(res => {
+      const response = res as any;
+      setCategories(response.data || []);
+    });
   }, []);
 
   // Sync Filter -> URL & Reset List
@@ -74,9 +77,12 @@ export default function MenuPage() {
         });
 
         const responseData = res as any;
-        const newItems = responseData.data;
+        const newItems = responseData.data || [];
         setItems(prev => page === 1 ? newItems : [...prev, ...newItems]);
-        setHasMore(responseData.hasMore);
+        // Calculate hasMore from pagination
+        const pagination = responseData.pagination;
+        const hasMoreItems = pagination ? page < pagination.totalPages : false;
+        setHasMore(hasMoreItems);
       } catch (error) {
         console.error(error);
       } finally {
@@ -188,89 +194,87 @@ export default function MenuPage() {
         )}
 
         <AnimatePresence mode='popLayout'>
-          {items.map((item, index) => {
-            const isLastItem = index === items.length - 1;
-
-            return (
-              <motion.div
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3 }}
-                key={item.id}
-                ref={isLastItem ? lastItemRef : null}
-                onClick={() => setSelectedItem(item)}
-                className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex gap-3 cursor-pointer active:scale-[0.98] transition-transform"
-              >
-                {/* Ảnh món ăn */}
-                <div className="w-24 h-24 bg-gray-100 rounded-xl flex-shrink-0 overflow-hidden relative">
-                  {item.photos && item.photos.length > 0 ? (
-                    <img
-                      src={item.photos.find((p: any) => p.isPrimary)?.url || item.photos[0].url}
-                      className="w-full h-full object-cover"
-                      alt={item.name}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                      <ShoppingBag size={20} className="text-gray-400" />
-                    </div>
-                  )}
-
-                  {item.isChefRecommended && (
-                    <div className="absolute top-0 left-0 bg-red-600/90 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-1 rounded-br-lg shadow-sm z-10">
-                      Chef's Choice
-                    </div>
-                  )}
-
-                  {item.status === 'SOLD_OUT' && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
-                      <span className="bg-gray-800 text-white text-xs font-bold px-2 py-1 rounded shadow-md border border-gray-600">Hết hàng</span>
-                    </div>
-                  )}
-                  {item.status === 'UNAVAILABLE' && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
-                      <span className="bg-gray-800 text-white text-xs font-bold px-2 py-1 rounded shadow-md border border-gray-600">Tạm ngưng</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Thông tin */}
-                <div className="flex-1 flex flex-col justify-between py-1">
-                  <div>
-                    <h3 className="font-bold text-gray-800 line-clamp-1 text-base">{item.name}</h3>
-                    <p className="text-xs text-gray-500 line-clamp-2 mt-1 leading-relaxed">{item.description}</p>
-
-                    {/* Size Options Display */}
-                    {(() => {
-                      const sizeGroup = item.modifierGroups?.find(
-                        g => g.name.toLowerCase().includes('size') || g.name.toLowerCase().includes('kích thước')
-                      );
-                      if (sizeGroup && sizeGroup.options.length > 0) {
-                        return (
-                          <div className="flex flex-wrap gap-1 mt-1.5">
-                            {sizeGroup.options.map(opt => (
-                              <span key={opt.id} className="text-[10px] uppercase font-bold text-gray-500 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-[4px]">
-                                {opt.name}
-                              </span>
-                            ))}
-                          </div>
-                        )
-                      }
-                      return null;
-                    })()}
+          {items.map((item) => (
+            <motion.div
+              layout
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.3 }}
+              key={item.id}
+              onClick={() => setSelectedItem(item)}
+              className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex gap-3 cursor-pointer active:scale-[0.98] transition-transform"
+            >
+              {/* Ảnh món ăn */}
+              <div className="w-24 h-24 bg-gray-100 rounded-xl flex-shrink-0 overflow-hidden relative">
+                {item.photos && item.photos.length > 0 ? (
+                  <img
+                    src={item.photos.find((p: any) => p.isPrimary)?.url || item.photos[0].url}
+                    className="w-full h-full object-cover"
+                    alt={item.name}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                    <ShoppingBag size={20} className="text-gray-400" />
                   </div>
-                  <div className="flex justify-between items-end mt-2">
-                    <span className="text-orange-600 font-extrabold text-lg">{item.price.toLocaleString()}đ</span>
-                    <button className="bg-orange-50 text-orange-600 w-8 h-8 rounded-full flex items-center justify-center hover:bg-orange-100 transition-colors">
-                      <span className="text-xl font-bold leading-none mb-0.5">+</span>
-                    </button>
+                )}
+
+                {item.isChefRecommended && (
+                  <div className="absolute top-0 left-0 bg-red-600/90 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-1 rounded-br-lg shadow-sm z-10">
+                    Chef's Choice
                   </div>
+                )}
+
+                {item.status === 'SOLD_OUT' && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+                    <span className="bg-gray-800 text-white text-xs font-bold px-2 py-1 rounded shadow-md border border-gray-600">Hết hàng</span>
+                  </div>
+                )}
+                {item.status === 'UNAVAILABLE' && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+                    <span className="bg-gray-800 text-white text-xs font-bold px-2 py-1 rounded shadow-md border border-gray-600">Tạm ngưng</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Thông tin */}
+              <div className="flex-1 flex flex-col justify-between py-1">
+                <div>
+                  <h3 className="font-bold text-gray-800 line-clamp-1 text-base">{item.name}</h3>
+                  <p className="text-xs text-gray-500 line-clamp-2 mt-1 leading-relaxed">{item.description}</p>
+
+                  {/* Size Options Display */}
+                  {(() => {
+                    const sizeGroup = item.modifierGroups?.find(
+                      g => g.name.toLowerCase().includes('size') || g.name.toLowerCase().includes('kích thước')
+                    );
+                    if (sizeGroup && sizeGroup.options.length > 0) {
+                      return (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {sizeGroup.options.map(opt => (
+                            <span key={opt.id} className="text-[10px] uppercase font-bold text-gray-500 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-[4px]">
+                              {opt.name}
+                            </span>
+                          ))}
+                        </div>
+                      )
+                    }
+                    return null;
+                  })()}
                 </div>
-              </motion.div>
-            );
-          })}
+                <div className="flex justify-between items-end mt-2">
+                  <span className="text-orange-600 font-extrabold text-lg">{item.price.toLocaleString()}đ</span>
+                  <button className="bg-orange-50 text-orange-600 w-8 h-8 rounded-full flex items-center justify-center hover:bg-orange-100 transition-colors">
+                    <span className="text-xl font-bold leading-none mb-0.5">+</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
         </AnimatePresence>
+
+        {/* Infinite Scroll Observer - Outside AnimatePresence */}
+        {hasMore && <div ref={lastItemRef} className="h-1" />}
 
         {/* Loading Skeleton */}
         {loading && (
@@ -321,7 +325,7 @@ export default function MenuPage() {
         />
       )}
       <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-      
+
       <Footer />
     </div>
   );
