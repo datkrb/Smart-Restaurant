@@ -75,10 +75,8 @@ export const getMenuItems = async (params: {
     const skip = (page - 1) * limit;
     const take = limit;
 
-    // Build filter
-    const where: any = {
-        status: "AVAILABLE",
-    };
+    // Build filter - Show all items regardless of status so customers can see availability
+    const where: any = {};
 
     if (search) {
         where.OR = [
@@ -184,11 +182,28 @@ export const requestBill = async (orderId: string) => {
         throw new Error("Order not found");
     }
 
-    // Update order status to request bill
+    if (order.billRequested) {
+        throw new Error("Bill already requested");
+    }
+
+    // Update order to request bill (keep current status, just mark as bill requested)
     const updatedOrder = await prisma.order.update({
         where: { id: orderId },
         data: {
-            status: "COMPLETED", // or create a new status "BILL_REQUESTED"
+            billRequested: true,
+        },
+        include: {
+            items: {
+                include: {
+                    menuItem: true,
+                    modifiers: { include: { modifierOption: true } },
+                },
+            },
+            tableSession: {
+                include: {
+                    table: true,
+                },
+            },
         },
     });
 

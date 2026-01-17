@@ -1,11 +1,13 @@
 import axiosClient from './axiosClient';
 
 export const waiterApi = {
-    getAssignedTables: () => axiosClient.get('/waiter/assigned-tables'),
-    getReadyOrders: () => axiosClient.get('/waiter/ready-orders'),
-    serveOrder: (orderId: string) => axiosClient.patch(`/waiter/orders/${orderId}/serve`),
+    // Get orders with status READY for serving
+    getReadyOrders: () => axiosClient.get('/orders?status=READY'),
 
-    // Reuse admin update status for accepting/rejecting orders if needed
+    // Mark order as served
+    serveOrder: (orderId: string) => axiosClient.patch(`/orders/${orderId}/status`, { status: 'SERVED' }),
+
+    // Update order status (accept/reject)
     updateOrderStatus: (orderId: string, status: string) =>
-        axiosClient.patch(`/admin/orders/${orderId}/status`, { status })
+        axiosClient.patch(`/orders/${orderId}/status`, { status })
 };
