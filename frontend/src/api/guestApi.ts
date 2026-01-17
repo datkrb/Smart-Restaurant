@@ -24,6 +24,6 @@ export const guestApi = {
 
   getReviews: (menuItemId: string, params: { page: number; limit: number }) =>
     axiosClient.get(`/guest/menu-items/${menuItemId}/reviews`, { params }),
-  createReview: (menuItemId: string, data: { rating: number; comment: string; customerName?: string }) =>
+  createReview: (menuItemId: string, data: { rating: number; comment: string; customerName?: string; tableSessionId: string }) =>
     axiosClient.post(`/guest/menu-items/${menuItemId}/reviews`, data),
 };

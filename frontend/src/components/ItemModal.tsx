@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { MenuItem, ModifierOption } from '../types';
 import { useCartStore } from '../store/useCartStore';
+import { useSessionStore } from '../store/useSessionStore';
 import { Star, MessageSquarePlus, ChevronDown } from 'lucide-react';
 import { guestApi } from '../api/guestApi';
+import { toast } from 'react-hot-toast';
 
 interface Props {
   item: MenuItem;
@@ -15,6 +17,7 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
   const [selectedModifiers, setSelectedModifiers] = useState<{ [key: string]: ModifierOption[] }>({});
   const [quantity, setQuantity] = useState(1);
   const addToCart = useCartStore(state => state.addToCart);
+  const sessionId = useSessionStore(state => state.sessionId);
 
   // Review States
   const [reviews, setReviews] = useState<any[]>([]);
@@ -59,20 +62,31 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
   };
 
   const handleSubmitReview = async () => {
-    if (!newComment.trim()) return alert("Please enter your review");
+    if (!newComment.trim()) {
+      toast.error("Please enter your review");
+      return;
+    }
+
+    if (!sessionId) {
+      toast.error("Session not found. Please scan QR code again.");
+      return;
+    }
+
     setIsSubmittingReview(true);
     try {
       await guestApi.createReview(item.id, {
         rating: newRating,
         comment: newComment,
-        customerName: !isLoggedIn ? "Guest" : undefined
+        customerName: !isLoggedIn ? "Guest" : undefined,
+        tableSessionId: sessionId
       });
-      alert("Thank you for your review!");
+      toast.success("Thank you for your review!");
       setNewComment('');
       setShowReviewForm(false);
       fetchReviews(1); // Refresh
-    } catch (error) {
-      alert("Failed to submit review");
+    } catch (error: any) {
+      const message = error.response?.data?.error || "Failed to submit review";
+      toast.error(message);
     } finally {
       setIsSubmittingReview(false);
     }

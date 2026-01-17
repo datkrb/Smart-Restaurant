@@ -252,10 +252,17 @@ export const getReviews = async (
 
 /**
  * Create a review for a menu item
+ * Verifies that the customer has ordered this item in their session
  */
 export const createReview = async (
     menuItemId: string,
-    data: { rating: number; comment?: string; customerName?: string }
+    data: {
+        rating: number;
+        comment?: string;
+        customerName?: string;
+        userId?: string | null;
+        tableSessionId: string;
+    }
 ) => {
     // Check if menu item exists
     const menuItem = await prisma.menuItem.findUnique({
@@ -266,13 +273,56 @@ export const createReview = async (
         throw new Error("Menu item not found");
     }
 
-    // Create review (guest review without userId)
+    // Verify that the customer has ordered this item in their session
+    const order = await prisma.order.findFirst({
+        where: {
+            tableSessionId: data.tableSessionId,
+        },
+        include: {
+            items: {
+                where: {
+                    menuItemId: menuItemId,
+                },
+            },
+        },
+    });
+
+    if (!order || order.items.length === 0) {
+        throw new Error("You can only review items you have ordered");
+    }
+
+    // Check if user already reviewed this item in this session
+    const existingReview = await prisma.review.findFirst({
+        where: {
+            menuItemId,
+            OR: [
+                { userId: data.userId || undefined },
+                { customerName: data.customerName || undefined },
+            ],
+        },
+    });
+
+    if (existingReview && data.userId) {
+        throw new Error("You have already reviewed this item");
+    }
+
+    // Create review with userId if logged in
     const review = await prisma.review.create({
         data: {
             menuItemId,
             rating: data.rating,
             comment: data.comment || "",
-            customerName: data.customerName || "Khách",
+            customerName: data.customerName || (data.userId ? undefined : "Guest"),
+            userId: data.userId || undefined,
+        },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    avatarUrl: true,
+                },
+            },
         },
     });
 

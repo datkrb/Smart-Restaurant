@@ -143,27 +143,38 @@ export const getReviews = async (req: Request, res: Response) => {
 };
 
 /**
- * Create a review for a menu item (Public)
- * PUBLIC - No authentication required
+ * Create a review for a menu item
+ * Requires tableSessionId to verify customer has ordered this item
  */
 export const createReview = async (req: Request, res: Response) => {
     try {
         const { menuItemId } = req.params;
-        const { rating, comment, customerName } = req.body;
+        const { rating, comment, customerName, tableSessionId } = req.body;
 
         if (!rating || rating < 1 || rating > 5) {
             return res.status(400).json({ error: "Rating must be between 1 and 5" });
         }
 
+        if (!tableSessionId) {
+            return res.status(400).json({ error: "tableSessionId is required to verify your order" });
+        }
+
+        // Get userId from JWT token if available
+        const user = req.user as any;
+        const userId = user?.id || null;
+
         const review = await guestService.createReview(menuItemId, {
             rating,
             comment,
             customerName,
+            userId,
+            tableSessionId,
         });
 
         res.status(201).json({ data: review });
     } catch (error: any) {
         console.error("Error creating review:", error);
-        res.status(500).json({ error: error.message || "Failed to create review" });
+        const statusCode = error.message.includes("not found") || error.message.includes("not ordered") ? 400 : 500;
+        res.status(statusCode).json({ error: error.message || "Failed to create review" });
     }
 };
