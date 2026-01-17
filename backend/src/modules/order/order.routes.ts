@@ -31,4 +31,11 @@ router.patch(
     OrderController.updateOrderStatus
 );
 
+// Update Order Items Status - Waiter
+router.patch(
+    "/:id/items",
+    roleGuard([Role.WAITER, Role.ADMIN, Role.SUPER_ADMIN]),
+    OrderController.updateOrderItems
+);
+
 export default router;

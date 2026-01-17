@@ -199,3 +199,57 @@ export const getOrderByTableSession = async (tableSessionId: string) => {
         include: orderInclude,
     });
 };
+
+/**
+ * Update status of multiple items in an order
+ */
+export const updateOrderItems = async (orderId: string, itemStatuses: { itemId: string, status: OrderStatus }[]) => {
+    return await prisma.$transaction(async (tx) => {
+        // 1. Update each item
+        for (const { itemId, status } of itemStatuses) {
+            await tx.orderItem.update({
+                where: { id: itemId },
+                data: { status }
+            });
+        }
+
+        // 2. Determine new Order Status
+        const order = await tx.order.findUnique({
+            where: { id: orderId },
+            include: { items: true }
+        });
+
+        if (!order) throw new Error("Order not found");
+
+        const allItems = order.items;
+        let newOrderStatus = order.status;
+
+        const allCancelled = allItems.every(i => i.status === "CANCELLED");
+        const anyPreparing = allItems.some(i => i.status === "PREPARING");
+        const allReady = allItems.every(i => i.status === "READY" || i.status === "CANCELLED" || i.status === "SERVED");
+
+        if (allCancelled) {
+            newOrderStatus = "CANCELLED";
+        } else if (anyPreparing) {
+            newOrderStatus = "PREPARING";
+        } else if (allReady && order.status !== "SERVED" && order.status !== "COMPLETED") {
+            newOrderStatus = "READY";
+        }
+
+        // 3. Update Order Status if changed
+        if (newOrderStatus !== order.status) {
+            await tx.order.update({
+                where: { id: orderId },
+                data: { status: newOrderStatus }
+            });
+        }
+
+        const updatedOrder = await tx.order.findUnique({
+            where: { id: orderId },
+            include: orderInclude
+        });
+
+        // 4. Return result
+        return updatedOrder;
+    });
+};

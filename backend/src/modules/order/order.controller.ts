@@ -23,6 +23,30 @@ export const getOrders = async (req: Request, res: Response) => {
     }
 };
 
+
+/**
+ * Update order items status (Waiter checks items)
+ */
+export const updateOrderItems = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { items } = req.body; // Expects [{itemId, status}]
+
+        const updatedOrder = await orderService.updateOrderItems(id, items);
+
+        // Realtime notify
+        const { io } = require("../../app");
+        if (io) {
+            io.emit("order_status_updated", updatedOrder);
+        }
+
+        res.json(updatedOrder);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Failed to update order items" });
+    }
+};
+
 /**
  * Update order status (Approve/Reject/Ready/Completed)
  */

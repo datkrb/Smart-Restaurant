@@ -12,6 +12,7 @@ interface OrderItem {
         price: number;
     };
     modifiers: any[];
+    status: string; // Added status
 }
 
 interface Order {
@@ -170,9 +171,22 @@ const OrderTrackingPage = () => {
                             <div key={idx} className="flex justify-between items-start">
                                 <div className="flex-1">
                                     <div className="flex justify-between font-medium text-gray-800">
-                                        <span>{item.menuItem.name} <span className="text-orange-600 ml-1 text-sm font-bold">x{item.quantity}</span></span>
-                                        <span>{(item.price * item.quantity).toLocaleString('vi-VN')}đ</span>
+                                        <span className={item.status === 'CANCELLED' ? 'line-through text-gray-400' : ''}>
+                                            {item.menuItem.name}
+                                            <span className="text-orange-600 ml-1 text-sm font-bold">x{item.quantity}</span>
+                                        </span>
+                                        <span className={item.status === 'CANCELLED' ? 'line-through text-gray-400' : ''}>
+                                            {(item.price * item.quantity).toLocaleString('vi-VN')}đ
+                                        </span>
                                     </div>
+
+                                    {/* Item Status Badge */}
+                                    <div className="flex gap-2 items-center mt-1">
+                                        {item.status === 'CANCELLED' && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold">CANCELLED</span>}
+                                        {item.status === 'PREPARING' && <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded font-bold">COOKING</span>}
+                                        {item.status === 'READY' && <span className="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded font-bold">READY</span>}
+                                    </div>
+
                                     {item.modifierString && (
                                         <div className="text-xs text-gray-500 mt-1 pl-2 border-l-2 border-gray-200">
                                             {item.modifierString}
