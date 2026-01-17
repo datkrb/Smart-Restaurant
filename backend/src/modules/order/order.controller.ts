@@ -111,3 +111,25 @@ export const getOrderBySession = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Lỗi lấy thông tin đơn hàng" });
     }
 };
+
+/**
+ * Complete order and close session (Waiter confirms payment received)
+ */
+export const completeOrder = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        const result = await orderService.completeOrderAndCloseSession(id);
+
+        // Realtime notify
+        const { io } = require("../../app");
+        if (io) {
+            io.emit("order_completed", { orderId: id });
+        }
+
+        res.json(result);
+    } catch (error: any) {
+        console.error(error);
+        res.status(500).json({ error: error.message || "Failed to complete order" });
+    }
+};

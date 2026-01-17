@@ -8,7 +8,7 @@ export const stripe = new Stripe(env.STRIPE_SECRET_KEY || "", {
 });
 
 // create payment intent
-export const createPaymentIntent = async (orderId: string) =>{
+export const createPaymentIntent = async (orderId: string) => {
     const order = await prisma.order.findUnique({
         where: {
             id: orderId,
@@ -20,7 +20,7 @@ export const createPaymentIntent = async (orderId: string) =>{
     if (!order) {
         throw new Error("Order not found");
     }
-    if(order.totalAmount <= 0){
+    if (order.totalAmount <= 0) {
         throw new Error("Order total amount is less than or equal to 0");
     }
 
@@ -29,7 +29,7 @@ export const createPaymentIntent = async (orderId: string) =>{
             orderId: orderId,
         },
     })
-    if(!payment){
+    if (!payment) {
         payment = await prisma.payment.create({
             data: {
                 orderId: orderId,
@@ -39,8 +39,8 @@ export const createPaymentIntent = async (orderId: string) =>{
             },
         })
     }
-    else{
-        if(payment.status === PaymentStatus.PENDING){
+    else {
+        if (payment.status === PaymentStatus.PENDING) {
             return payment;
         }
     }
@@ -54,7 +54,7 @@ export const createPaymentIntent = async (orderId: string) =>{
         },
         automatic_payment_methods: {
             enabled: true,
-        },       
+        },
     })
     return {
         clientSecret: paymentIntent.client_secret,
@@ -64,37 +64,67 @@ export const createPaymentIntent = async (orderId: string) =>{
 }
 
 //process success payment
-export const processSuccessPayment = async (orderId: string, method: PaymentMethod) => {
-    const payment = await prisma.payment.update({
-        where: {
-            orderId: orderId,
-        },
-        data: {
-            status: PaymentStatus.PAID,
-            method: method,
-            paidAt: new Date(),
-        },
-    })
+export const processSuccessPayment = async (
+    orderId: string,
+    method: PaymentMethod,
+    discountAmount: number = 0,
+    discountType: string | null = null,
+    finalAmount: number | null = null
+) => {
+    // Create or update payment record
+    const existingPayment = await prisma.payment.findUnique({
+        where: { orderId }
+    });
+
+    const order = await prisma.order.findUnique({
+        where: { id: orderId }
+    });
+
+    if (!order) throw new Error("Order not found");
+
+    const calculatedFinalAmount = finalAmount ?? order.totalAmount - discountAmount;
+
+    if (existingPayment) {
+        await prisma.payment.update({
+            where: { orderId },
+            data: {
+                status: PaymentStatus.PAID,
+                method: method,
+                discountAmount,
+                discountType,
+                finalAmount: calculatedFinalAmount,
+                paidAt: new Date(),
+            },
+        });
+    } else {
+        await prisma.payment.create({
+            data: {
+                orderId,
+                amount: order.totalAmount,
+                method: method,
+                status: PaymentStatus.PAID,
+                discountAmount,
+                discountType,
+                finalAmount: calculatedFinalAmount,
+                paidAt: new Date(),
+            },
+        });
+    }
 
     const updatedOrder = await prisma.order.update({
-        where: {
-            id: orderId,
-        },
-        data: {
-            status: OrderStatus.COMPLETED,
-        },
-    })
+        where: { id: orderId },
+        data: { status: OrderStatus.COMPLETED },
+    });
 
-    if(updatedOrder.tableSessionId){
+    if (updatedOrder.tableSessionId) {
         await prisma.tableSession.update({
-            where: {
-                id: updatedOrder.tableSessionId,
-            },
+            where: { id: updatedOrder.tableSessionId },
             data: {
                 status: TableSessionStatus.CLOSED,
                 endedAt: new Date(),
             },
-        })
+        });
     }
     return true;
 }
+

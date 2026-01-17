@@ -18,7 +18,18 @@ interface CreateOrderInput {
 
 // Include configuration for order queries
 const orderInclude = {
-    tableSession: { include: { table: true } },
+    tableSession: {
+        include: {
+            table: true,
+            waiter: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                }
+            }
+        }
+    },
     items: {
         include: {
             menuItem: true,
@@ -49,6 +60,8 @@ export const createOrder = async (data: CreateOrderInput) => {
             where: { tableSessionId: tableSessionId },
         });
 
+        const isNewOrder = !order;
+
         if (!order) {
             order = await tx.order.create({
                 data: {
@@ -57,6 +70,32 @@ export const createOrder = async (data: CreateOrderInput) => {
                     totalAmount: 0,
                 },
             });
+
+            // Auto-assign waiter to session if not already assigned
+            const sessionWithWaiter = await tx.tableSession.findUnique({
+                where: { id: tableSessionId },
+                select: { waiterId: true }
+            });
+
+            if (!sessionWithWaiter?.waiterId) {
+                // Find an available waiter (round-robin or least busy)
+                const availableWaiter = await tx.user.findFirst({
+                    where: {
+                        role: "WAITER",
+                        isActive: true,
+                    },
+                    orderBy: {
+                        createdAt: 'asc' // Simple round-robin by creation order
+                    }
+                });
+
+                if (availableWaiter) {
+                    await tx.tableSession.update({
+                        where: { id: tableSessionId },
+                        data: { waiterId: availableWaiter.id }
+                    });
+                }
+            }
         }
 
         let orderTotalDelta = 0;
@@ -213,14 +252,36 @@ export const updateOrderItems = async (orderId: string, itemStatuses: { itemId: 
             });
         }
 
-        // 2. Determine new Order Status
+        // 2. Get updated order with items and modifiers
         const order = await tx.order.findUnique({
             where: { id: orderId },
-            include: { items: true }
+            include: {
+                items: {
+                    include: {
+                        modifiers: {
+                            include: { modifierOption: true }
+                        }
+                    }
+                }
+            }
         });
 
         if (!order) throw new Error("Order not found");
 
+        // 3. Recalculate totalAmount (exclude CANCELLED items)
+        let newTotalAmount = 0;
+        for (const item of order.items) {
+            if (item.status !== "CANCELLED") {
+                let itemTotal = item.price * item.quantity;
+                // Add modifier prices
+                for (const mod of item.modifiers) {
+                    itemTotal += (mod.modifierOption.priceDelta || 0) * item.quantity;
+                }
+                newTotalAmount += itemTotal;
+            }
+        }
+
+        // 4. Determine new Order Status
         const allItems = order.items;
         let newOrderStatus = order.status;
 
@@ -236,20 +297,55 @@ export const updateOrderItems = async (orderId: string, itemStatuses: { itemId: 
             newOrderStatus = "READY";
         }
 
-        // 3. Update Order Status if changed
-        if (newOrderStatus !== order.status) {
-            await tx.order.update({
-                where: { id: orderId },
-                data: { status: newOrderStatus }
-            });
-        }
+        // 5. Update Order Status and TotalAmount
+        await tx.order.update({
+            where: { id: orderId },
+            data: {
+                status: newOrderStatus,
+                totalAmount: newTotalAmount
+            }
+        });
 
         const updatedOrder = await tx.order.findUnique({
             where: { id: orderId },
             include: orderInclude
         });
 
-        // 4. Return result
+        // 6. Return result
         return updatedOrder;
+    });
+};
+
+/**
+ * Complete order and close table session (Simple payment flow)
+ */
+export const completeOrderAndCloseSession = async (orderId: string) => {
+    return await prisma.$transaction(async (tx) => {
+        // 1. Get the order
+        const order = await tx.order.findUnique({
+            where: { id: orderId },
+            include: { tableSession: true }
+        });
+
+        if (!order) throw new Error("Order not found");
+
+        // 2. Update order status to COMPLETED
+        await tx.order.update({
+            where: { id: orderId },
+            data: { status: "COMPLETED" }
+        });
+
+        // 3. Close the table session
+        if (order.tableSessionId) {
+            await tx.tableSession.update({
+                where: { id: order.tableSessionId },
+                data: {
+                    status: "CLOSED",
+                    endedAt: new Date()
+                }
+            });
+        }
+
+        return { success: true, message: "Order completed and session closed" };
     });
 };

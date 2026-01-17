@@ -32,7 +32,6 @@ import AdminEmployeesPage from './pages/admin/AdminEmployeesPage';
 
 // Staff Pages (Waiter & Kitchen)
 import WaiterPage from './pages/waiter/WaiterPage';
-import TableMapPage from './pages/waiter/TableMapPage';
 import KitchenPage from './pages/kitchen/KitchenPage';
 
 function App() {
@@ -78,7 +77,6 @@ function App() {
 
         {/* Service & Operational Flow */}
         <Route path="/waiter" element={<WaiterPage />} />
-        <Route path="/waiter/map" element={<TableMapPage />} />
         <Route path="/kitchen" element={<KitchenPage />} />
 
         {/* Fallback 404 Route */}

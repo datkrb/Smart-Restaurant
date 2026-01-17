@@ -38,4 +38,11 @@ router.patch(
     OrderController.updateOrderItems
 );
 
+// Complete Order and Close Session - Waiter (Simple payment confirmation)
+router.post(
+    "/:id/complete",
+    roleGuard([Role.WAITER, Role.ADMIN, Role.SUPER_ADMIN]),
+    OrderController.completeOrder
+);
+
 export default router;

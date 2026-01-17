@@ -164,7 +164,7 @@ export const getOrderBySession = async (sessionId: string) => {
     });
 
     if (!order) {
-        throw new Error("Order not found");
+        return null;
     }
 
     return order;
