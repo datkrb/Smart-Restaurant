@@ -240,7 +240,276 @@ The system is containerized using Docker and can be deployed to any public hosti
 
 ---
 
-## 9. Contributors
+## 9. Setup & Running Instructions
+
+### 9.1 Prerequisites
+
+- **Node.js** >= 18.x
+- **npm** >= 9.x
+- **PostgreSQL** >= 15.x (for local setup)
+- **Redis** >= 7.x (optional, for caching)
+- **Docker** & **Docker Compose** (for Docker setup)
+
+### 9.2 Environment Configuration
+
+#### Backend Environment Variables
+
+Copy `.env.example` to `.env` in the `backend` folder:
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Update the following variables in `backend/.env`:
+
+```env
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/restaurant
+
+# Redis (optional)
+REDIS_URL=redis://localhost:6379
+
+# Authentication
+SESSION_SECRET=your-session-secret-here
+JWT_SECRET=your-jwt-secret-here
+REFRESH_SECRET_KEY=your-refresh-secret-here
+
+# Google OAuth (optional)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+
+# Email (SMTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+
+# Payment Gateway
+STRIPE_SECRET_KEY=sk_test_your-stripe-secret-key
+STRIPE_WEBHOOK_SECRET=whsec_your-webhook-secret
+
+# Frontend URL
+FRONTEND_URL=http://localhost:5173
+
+# Server Port
+PORT=4000
+```
+
+---
+
+### 9.3 Method 1: Running Locally
+
+#### Step 1: Install Dependencies
+
+**Backend:**
+```bash
+cd backend
+npm install
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm install
+```
+
+#### Step 2: Setup Database
+
+Make sure PostgreSQL is running, then:
+
+```bash
+cd backend
+
+# Generate Prisma Client
+npx prisma generate
+
+# Run migrations
+npx prisma migrate dev
+
+# Seed database with sample data
+npx prisma db seed
+```
+
+#### Step 3: Start Development Servers
+
+**Terminal 1 - Backend:**
+```bash
+cd backend
+npm run dev
+```
+Backend will run on `http://localhost:4000`
+
+**Terminal 2 - Frontend:**
+```bash
+cd frontend
+npm run dev
+```
+Frontend will run on `http://localhost:5173`
+
+#### Step 4: Access the Application
+
+- **Frontend:** http://localhost:5173
+- **Backend API:** http://localhost:4000
+- **Admin Login:** Use credentials from seeded data
+
+---
+
+### 9.4 Method 2: Running with Docker
+
+#### Step 1: Start All Services
+
+From the project root directory:
+
+```bash
+# Build and start all containers
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# View specific service logs
+docker-compose logs -f backend
+docker-compose logs -f frontend
+```
+
+#### Step 2: Initialize Database
+
+The backend container automatically runs migrations on startup. To seed the database:
+
+```bash
+# Access backend container
+docker-compose exec backend sh
+
+# Run seed command
+npm run prisma db seed
+
+# Exit container
+exit
+```
+
+#### Step 3: Access the Application
+
+- **Frontend:** http://localhost:3000
+- **Backend API:** http://localhost:4000
+- **PostgreSQL:** localhost:5432
+- **Redis:** localhost:6379
+
+#### Step 4: Stop Services
+
+```bash
+# Stop all containers
+docker-compose down
+
+# Stop and remove volumes (WARNING: deletes database data)
+docker-compose down -v
+```
+
+---
+
+### 9.5 Useful Commands
+
+#### Local Development
+
+```bash
+# Backend
+cd backend
+npm run dev          # Start dev server
+npm run build        # Build for production
+npm run start        # Start production server
+npx prisma studio    # Open Prisma Studio (database GUI)
+npx prisma migrate dev --name <migration-name>  # Create new migration
+
+# Frontend
+cd frontend
+npm run dev          # Start dev server
+npm run build        # Build for production
+npm run preview      # Preview production build
+```
+
+#### Docker
+
+```bash
+# Rebuild containers after code changes
+docker-compose up -d --build
+
+# View running containers
+docker-compose ps
+
+# Stop specific service
+docker-compose stop backend
+
+# Restart specific service
+docker-compose restart backend
+
+# Remove all containers and volumes
+docker-compose down -v
+
+# Access container shell
+docker-compose exec backend sh
+docker-compose exec frontend sh
+
+# View real-time logs
+docker-compose logs -f --tail=100
+```
+
+---
+
+### 9.6 Default Login Credentials (After Seeding)
+
+Check `backend/prisma/seed.ts` for default user credentials created during database seeding.
+
+Typical default accounts:
+- **Super Admin:** superadmin@restaurant.com
+- **Admin:** admin@restaurant.com
+- **Waiter:** waiter@restaurant.com
+- **Kitchen:** kitchen@restaurant.com
+- **Customer:** customer@restaurant.com
+
+Default password is usually set in the seed file.
+
+---
+
+### 9.7 Troubleshooting
+
+#### Port Already in Use
+```bash
+# Check what's using the port
+netstat -ano | findstr :4000
+netstat -ano | findstr :3000
+
+# Kill the process (Windows)
+taskkill /PID <process-id> /F
+```
+
+#### Database Connection Issues
+- Verify PostgreSQL is running
+- Check DATABASE_URL in `.env`
+- Ensure database exists: `createdb restaurant`
+
+#### Docker Issues
+```bash
+# Clean up Docker
+docker-compose down -v
+docker system prune -a
+
+# Rebuild from scratch
+docker-compose up -d --build --force-recreate
+```
+
+#### Migration Errors
+```bash
+# Reset database (WARNING: deletes all data)
+npx prisma migrate reset
+
+# Or manually
+npx prisma migrate dev --create-only
+npx prisma migrate deploy
+```
+
+---
+
+## 10. Contributors
 
 | Name     | Responsibility                                     |
 | -------- | -------------------------------------------------- |
@@ -249,7 +518,7 @@ The system is containerized using Docker and can be deployed to any public hosti
 
 ---
 
-## 10. Demo Flow
+## 11. Demo Flow
 
 1. Admin logs in and creates menu
 2. Admin creates tables and generates QR codes
@@ -261,3 +530,4 @@ The system is containerized using Docker and can be deployed to any public hosti
 ---
 
 **End of Document**
+

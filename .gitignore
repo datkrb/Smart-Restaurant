@@ -1,30 +1,57 @@
-# Node
+# Common Dependencies
 node_modules/
+**/node_modules/
+
+# Build Outputs
 dist/
+**/dist/
+build/
+**/build/
+.next/
+**/out/
+
+# Environment Variables (CRITICAL for security)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+backend/.env
+frontend/.env
 
 # Logs
 logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
+pnpm-debug.log*
 
-# OS
+# OS Files
 .DS_Store
 Thumbs.db
+*.swp
+
+# IDE Settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
 
 # Prisma
-prisma/dev.db
+/backend/prisma/dev.db
+/backend/prisma/dev.db-journal
+# DO NOT ignore migrations/ - they are needed for deployment/staging
 
 # Docker
 *.pid
-
-# Vite
-frontend/dist/
-
-# VSCode
-.vscode/
-
-# Others
-coverage/
 pgdata/
+docker-compose.override.yml
+
+# Testing
+coverage/
+
+# Misc
+.cache/
+.npm/
+.eslintcache

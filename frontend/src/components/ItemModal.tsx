@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { MenuItem, ModifierOption } from '../types';
 import { useCartStore } from '../store/useCartStore';
+import { useSessionStore } from '../store/useSessionStore';
 import { Star, MessageSquarePlus, ChevronDown } from 'lucide-react';
 import { guestApi } from '../api/guestApi';
+import { toast } from 'react-hot-toast';
 
 interface Props {
   item: MenuItem;
@@ -12,10 +14,10 @@ interface Props {
 }
 
 export default function ItemModal({ item, relatedItems = [], onSelectRelated, onClose }: Props) {
-  // Lưu các option đã chọn theo groupId
   const [selectedModifiers, setSelectedModifiers] = useState<{ [key: string]: ModifierOption[] }>({});
   const [quantity, setQuantity] = useState(1);
   const addToCart = useCartStore(state => state.addToCart);
+  const sessionId = useSessionStore(state => state.sessionId);
 
   // Review States
   const [reviews, setReviews] = useState<any[]>([]);
@@ -60,20 +62,31 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
   };
 
   const handleSubmitReview = async () => {
-    if (!newComment.trim()) return alert("Vui lòng nhập nội dung đánh giá");
+    if (!newComment.trim()) {
+      toast.error("Please enter your review");
+      return;
+    }
+
+    if (!sessionId) {
+      toast.error("Session not found. Please scan QR code again.");
+      return;
+    }
+
     setIsSubmittingReview(true);
     try {
       await guestApi.createReview(item.id, {
         rating: newRating,
         comment: newComment,
-        customerName: !isLoggedIn ? "Khách vãng lai" : undefined
+        customerName: !isLoggedIn ? "Guest" : undefined,
+        tableSessionId: sessionId
       });
-      alert("Cảm ơn bạn đã đánh giá!");
+      toast.success("Thank you for your review!");
       setNewComment('');
       setShowReviewForm(false);
       fetchReviews(1); // Refresh
-    } catch (error) {
-      alert("Lỗi khi gửi đánh giá");
+    } catch (error: any) {
+      const message = error.response?.data?.error || "Failed to submit review";
+      toast.error(message);
     } finally {
       setIsSubmittingReview(false);
     }
@@ -82,11 +95,11 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
   const handleOptionChange = (groupId: string, option: ModifierOption, isRequired: boolean) => {
     setSelectedModifiers(prev => {
       const currentOptions = prev[groupId] || [];
-      // Logic: Nếu bắt buộc chọn 1 (Single Select)
+      // Single Select for required groups
       if (isRequired) {
         return { ...prev, [groupId]: [option] };
       }
-      // Logic: Multi-select (Thêm hoặc bớt)
+      // Multi-select (Add or remove)
       const exists = currentOptions.find(o => o.id === option.id);
       if (exists) {
         return { ...prev, [groupId]: currentOptions.filter(o => o.id !== option.id) };
@@ -96,10 +109,10 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
   };
 
   const handleConfirm = () => {
-    // Kiểm tra các nhóm bắt buộc (Required) đã được chọn chưa
+    // Check required groups are selected
     for (const group of item.modifierGroups) {
       if (group.required && (!selectedModifiers[group.id] || selectedModifiers[group.id].length === 0)) {
-        alert(`Vui lòng chọn ${group.name}`);
+        alert(`Please select ${group.name}`);
         return;
       }
     }
@@ -134,7 +147,7 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
           {!isAvailable && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/40">
               <span className="bg-red-600 text-white font-bold px-4 py-2 rounded-lg text-lg transform -rotate-6 border-2 border-white shadow-lg">
-                {item.status === 'SOLD_OUT' ? 'HẾT HÀNG' : 'TẠM NGƯNG'}
+                {item.status === 'SOLD_OUT' ? 'SOLD OUT' : 'UNAVAILABLE'}
               </span>
             </div>
           )}
@@ -144,7 +157,7 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
         <div className="flex-1 overflow-y-auto p-5 pb-24">
           <div className="flex justify-between items-start mb-2">
             <h2 className="text-2xl font-black text-gray-800 leading-tight">{item.name}</h2>
-            <span className="text-xl font-bold text-orange-600 shrink-0 ml-4">{item.price.toLocaleString()}đ</span>
+            <span className="text-xl font-bold text-orange-600 shrink-0 ml-4">{item.price.toLocaleString('vi-VN')}đ</span>
           </div>
           <p className="text-gray-500 mb-6 text-sm leading-relaxed">{item.description}</p>
 
@@ -179,7 +192,7 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
                       <span className="font-medium text-gray-700">{opt.name}</span>
                     </div>
                     {opt.priceDelta > 0 && (
-                      <span className="text-gray-500 font-medium text-sm">+{opt.priceDelta.toLocaleString()}đ</span>
+                      <span className="text-gray-500 font-medium text-sm">+{opt.priceDelta.toLocaleString('vi-VN')}đ</span>
                     )}
                   </label>
                 ))}
@@ -191,7 +204,7 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
           {relatedItems.length > 0 && (
             <div className="mt-8 border-t border-gray-100 pt-6">
               <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span>🍽️</span> Có thể bạn cũng thích
+                <span>🍽️</span> You might also like
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 {relatedItems.map(r => (
@@ -204,13 +217,13 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
                       {r.photos?.[0]?.url && <img src={r.photos[0].url} className="w-full h-full object-cover" />}
                       {r.status !== 'AVAILABLE' && (
                         <div className="absolute inset-0 bg-black/50 text-white text-[10px] flex items-center justify-center font-bold uppercase">
-                          {r.status === 'SOLD_OUT' ? 'Hết' : 'Ngưng'}
+                          {r.status === 'SOLD_OUT' ? 'Out' : 'N/A'}
                         </div>
                       )}
                     </div>
                     <div>
                       <div className="font-bold text-xs text-gray-800 line-clamp-1">{r.name}</div>
-                      <div className="text-orange-600 font-bold text-xs">{r.price.toLocaleString()}đ</div>
+                      <div className="text-orange-600 font-bold text-xs">{r.price.toLocaleString('vi-VN')}đ</div>
                     </div>
                   </div>
                 ))}
@@ -223,7 +236,7 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
                 <Star className="fill-yellow-400 text-yellow-400" size={20} />
-                <span>Đánh giá</span>
+                <span>Reviews</span>
               </h3>
               {isLoggedIn && !showReviewForm && (
                 <button
@@ -231,7 +244,7 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
                   className="text-orange-600 font-bold text-sm border border-orange-200 px-3 py-1 rounded-full hover:bg-orange-50 transition-colors flex items-center gap-1"
                 >
                   <MessageSquarePlus size={16} />
-                  <span>Hài lòng?</span>
+                  <span>Rate it?</span>
                 </button>
               )}
             </div>
@@ -249,7 +262,7 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
                 <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Bạn thấy món này thế nào? Chia sẻ cảm nhận nhé..."
+                  placeholder="How was this dish? Share your thoughts..."
                   className="w-full bg-white border border-orange-100 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 min-h-[80px]"
                 />
                 <div className="flex gap-2 mt-3">
@@ -258,12 +271,12 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
                     onClick={handleSubmitReview}
                     className="flex-1 bg-orange-600 text-white font-bold py-2 rounded-lg text-sm disabled:opacity-50"
                   >
-                    {isSubmittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+                    {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
                   </button>
                   <button
                     onClick={() => setShowReviewForm(false)}
                     className="px-4 py-2 text-gray-400 font-bold text-sm"
-                  >Hủy</button>
+                  >Cancel</button>
                 </div>
               </div>
             )}
@@ -271,13 +284,13 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
             {/* Review List */}
             <div className="space-y-6">
               {reviews.length === 0 && !loadingReviews && (
-                <p className="text-gray-400 text-sm text-center py-6 italic">Chưa có đánh giá nào cho món ăn này.</p>
+                <p className="text-gray-400 text-sm text-center py-6 italic">No reviews yet for this item.</p>
               )}
               {reviews.map(rev => (
                 <div key={rev.id} className="group">
                   <div className="flex justify-between items-start mb-1">
                     <span className="font-bold text-gray-800 text-sm">
-                      {rev.user?.fullName || rev.customerName || "Khách hàng"}
+                      {rev.user?.fullName || rev.customerName || "Customer"}
                     </span>
                     <div className="flex gap-0.5">
                       {[...Array(5)].map((_, i) => (
@@ -286,7 +299,7 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
                     </div>
                   </div>
                   <p className="text-gray-600 text-sm leading-relaxed">{rev.comment}</p>
-                  <div className="text-[10px] text-gray-400 mt-1">{new Date(rev.createdAt).toLocaleDateString('vi-VN')}</div>
+                  <div className="text-[10px] text-gray-400 mt-1">{new Date(rev.createdAt).toLocaleDateString('en-US')}</div>
                 </div>
               ))}
 
@@ -296,9 +309,9 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
                   disabled={loadingReviews}
                   className="w-full py-3 text-orange-600 font-bold text-sm flex items-center justify-center gap-1 hover:bg-orange-50 rounded-xl transition-colors"
                 >
-                  {loadingReviews ? 'Đang tải...' : (
+                  {loadingReviews ? 'Loading...' : (
                     <>
-                      <span>Xem thêm đánh giá</span>
+                      <span>Load more reviews</span>
                       <ChevronDown size={16} />
                     </>
                   )}
@@ -330,14 +343,14 @@ export default function ItemModal({ item, relatedItems = [], onSelectRelated, on
                 onClick={handleConfirm}
                 className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-orange-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
-                <span>Thêm</span>
+                <span>Add</span>
                 <span>•</span>
-                <span>{(item.price * quantity).toLocaleString()}đ</span>
+                <span>{(item.price * quantity).toLocaleString('vi-VN')}đ</span>
               </button>
             </div>
           ) : (
             <div className="w-full bg-gray-100 text-gray-400 py-3 rounded-xl font-bold text-center cursor-not-allowed uppercase tracking-wide">
-              {item.status === 'SOLD_OUT' ? 'Đã hết hàng' : 'Tạm ngưng phục vụ'}
+              {item.status === 'SOLD_OUT' ? 'Sold Out' : 'Temporarily Unavailable'}
             </div>
           )}
         </div>
