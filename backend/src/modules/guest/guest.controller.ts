@@ -85,7 +85,8 @@ export const getOrderBySession = async (req: Request, res: Response) => {
         const { sessionId } = req.params;
 
         const order = await guestService.getOrderBySession(sessionId);
-        res.json({ data: order });
+        // Return order directly for frontend compatibility
+        res.json(order);
     } catch (error: any) {
         console.error("Error fetching order:", error);
         const statusCode = error.message === "Order not found" ? 404 : 500;

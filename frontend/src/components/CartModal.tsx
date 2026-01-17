@@ -6,8 +6,9 @@ import { guestApi } from '../api/guestApi';
 
 export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { items, totalAmount, clearCart, updateQuantity, removeFromCart } = useCartStore();
-  const sessionId = useSessionStore(state => state.sessionId); // Lấy ID phiên làm việc
+  const sessionId = useSessionStore(state => state.sessionId);
   const [isOrdering, setIsOrdering] = useState(false);
+  const [orderNotes, setOrderNotes] = useState('');
 
   const navigate = useNavigate();
 
@@ -15,32 +16,35 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
 
   const handleOrder = async () => {
     if (!sessionId) {
-      alert("Lỗi: Không tìm thấy phiên làm việc!");
+      alert("Error: Session not found! Please scan QR code again.");
       return;
     }
 
     if (items.length === 0) {
-      alert("Giỏ hàng đang trống!");
+      alert("Your cart is empty!");
       return;
     }
 
     try {
       setIsOrdering(true);
 
-      // Gọi API đặt món
       await guestApi.placeOrder({
         tableSessionId: sessionId,
-        items: items
+        items: items.map(item => ({
+          ...item,
+          note: orderNotes || undefined
+        }))
       });
 
-      alert("🎉 Đặt món thành công! Nhà bếp sẽ chuẩn bị ngay.");
-      clearCart(); // Xóa giỏ hàng sau khi đặt thành công
-      onClose();   // Đóng modal
+      alert("🎉 Order placed successfully! Kitchen will prepare your food.");
+      clearCart();
+      setOrderNotes('');
+      onClose();
       navigate('/tracking');
 
     } catch (error) {
       console.error(error);
-      alert("❌ Có lỗi xảy ra khi đặt món. Vui lòng thử lại.");
+      alert("❌ Failed to place order. Please try again.");
     } finally {
       setIsOrdering(false);
     }
@@ -50,12 +54,12 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center sm:items-center">
       <div className="bg-white w-full sm:w-96 sm:rounded-2xl rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">Giỏ hàng của bạn</h2>
+          <h2 className="text-xl font-bold">Your Cart</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-2 text-xl font-bold">✕</button>
         </div>
 
         {items.length === 0 ? (
-          <p className="text-center text-gray-500 py-10">Chưa có món nào được chọn.</p>
+          <p className="text-center text-gray-500 py-10">No items selected yet.</p>
         ) : (
           <div className="space-y-6">
             {items.map((item, idx) => (
@@ -64,7 +68,7 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
                   <div className="flex-1 mr-4">
                     <p className="font-bold text-gray-800 text-base">{item.name}</p>
                     <p className="text-[11px] text-gray-400 mt-0.5 italic">
-                      {Object.values(item.selectedModifiers || {}).flat().map(o => o.name).join(', ') || 'Không có tùy chọn'}
+                      {Object.values(item.selectedModifiers || {}).flat().map(o => o.name).join(', ') || 'No options'}
                     </p>
                   </div>
                   <button
@@ -93,7 +97,7 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
                       +
                     </button>
                   </div>
-                  <p className="font-bold text-gray-800 text-sm">{(item.totalPrice * item.quantity).toLocaleString()}đ</p>
+                  <p className="font-bold text-gray-800 text-sm">{(item.totalPrice * item.quantity).toLocaleString('vi-VN')}đ</p>
                 </div>
               </div>
             ))}
@@ -101,10 +105,27 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
         )}
 
         {items.length > 0 && (
-          <div className="mt-6 border-t pt-4">
-            <div className="flex justify-between text-lg font-bold mb-4">
-              <span>Tổng cộng:</span>
-              <span className="text-orange-600">{totalAmount().toLocaleString()}đ</span>
+          <div className="mt-6 border-t pt-4 space-y-4">
+            {/* Order Notes/Special Requests */}
+            <div>
+              <label htmlFor="orderNotes" className="block text-sm font-bold text-gray-700 mb-2">
+                Special Requests (optional)
+              </label>
+              <textarea
+                id="orderNotes"
+                value={orderNotes}
+                onChange={(e) => setOrderNotes(e.target.value)}
+                placeholder="E.g.: No onions, less spicy, extra ice..."
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                rows={3}
+                maxLength={200}
+              />
+              <p className="text-xs text-gray-400 mt-1">{orderNotes.length}/200 characters</p>
+            </div>
+
+            <div className="flex justify-between text-lg font-bold">
+              <span>Total:</span>
+              <span className="text-orange-600">{totalAmount().toLocaleString('vi-VN')}đ</span>
             </div>
 
             <button
@@ -113,7 +134,7 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
               className={`w-full py-4 rounded-xl font-bold text-white transition-all ${isOrdering ? 'bg-gray-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700 active:scale-95'
                 }`}
             >
-              {isOrdering ? 'Đang gửi đơn...' : 'Xác nhận đặt món'}
+              {isOrdering ? 'Placing Order...' : 'Confirm Order'}
             </button>
           </div>
         )}

@@ -171,7 +171,7 @@ const OrderTrackingPage = () => {
                                 <div className="flex-1">
                                     <div className="flex justify-between font-medium text-gray-800">
                                         <span>{item.menuItem.name} <span className="text-orange-600 ml-1 text-sm font-bold">x{item.quantity}</span></span>
-                                        <span>${(item.price * item.quantity).toFixed(2)}</span>
+                                        <span>{(item.price * item.quantity).toLocaleString('vi-VN')}đ</span>
                                     </div>
                                     {item.modifierString && (
                                         <div className="text-xs text-gray-500 mt-1 pl-2 border-l-2 border-gray-200">
@@ -186,7 +186,7 @@ const OrderTrackingPage = () => {
 
                 <div className="border-t border-dashed pt-3 flex justify-between items-center">
                     <span className="font-bold text-gray-600">Total Amount</span>
-                    <span className="text-xl font-black text-gray-900">${order.totalAmount.toFixed(2)}</span>
+                    <span className="text-xl font-black text-gray-900">{order.totalAmount.toLocaleString('vi-VN')}đ</span>
                 </div>
             </div>
 
