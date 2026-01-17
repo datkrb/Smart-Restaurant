@@ -110,8 +110,8 @@ const AdminDashboardPage = () => {
                 <div className="p-4 bg-red-100 text-red-600 rounded-full mb-4">
                     <ShieldAlert size={48} />
                 </div>
-                <h1 className="text-2xl font-bold text-gray-800 mb-2">Truy cập bị từ chối</h1>
-                <p className="text-gray-500">Bạn không có quyền truy cập trang này.</p>
+                <h1 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h1>
+                <p className="text-gray-500">You do not have permission to access this page.</p>
             </div>
         );
     }
@@ -122,16 +122,16 @@ const AdminDashboardPage = () => {
             {/* Header & Filters */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                 <div>
-                    <h1 className="text-2xl font-black text-gray-800 tracking-tight">Tổng quan</h1>
-                    <p className="text-sm text-gray-500 font-medium">Thống kê hoạt động kinh doanh</p>
+                    <h1 className="text-2xl font-black text-gray-800 tracking-tight">Overview</h1>
+                    <p className="text-sm text-gray-500 font-medium">Business statistics</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 items-center w-full md:w-auto">
                     <div className="flex bg-gray-100 p-1 rounded-lg">
                         <button onClick={() => setQuickFilter('1h')} className="px-3 py-1 text-xs font-bold rounded hover:bg-white hover:shadow-sm transition text-gray-600">1h</button>
-                        <button onClick={() => setQuickFilter('today')} className="px-3 py-1 text-xs font-bold rounded hover:bg-white hover:shadow-sm transition text-gray-600">Hôm nay</button>
-                        <button onClick={() => setQuickFilter('7d')} className="px-3 py-1 text-xs font-bold rounded hover:bg-white hover:shadow-sm transition text-gray-600">7 ngày</button>
-                        <button onClick={() => setQuickFilter('30d')} className="px-3 py-1 text-xs font-bold rounded hover:bg-white hover:shadow-sm transition text-gray-600">30 ngày</button>
+                        <button onClick={() => setQuickFilter('today')} className="px-3 py-1 text-xs font-bold rounded hover:bg-white hover:shadow-sm transition text-gray-600">Today</button>
+                        <button onClick={() => setQuickFilter('7d')} className="px-3 py-1 text-xs font-bold rounded hover:bg-white hover:shadow-sm transition text-gray-600">7 Days</button>
+                        <button onClick={() => setQuickFilter('30d')} className="px-3 py-1 text-xs font-bold rounded hover:bg-white hover:shadow-sm transition text-gray-600">30 Days</button>
                     </div>
                     <div className="flex items-center gap-2">
                         <input
@@ -158,28 +158,28 @@ const AdminDashboardPage = () => {
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-                            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Doanh thu</p>
+                            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Revenue</p>
                             <div className="flex justify-between items-end">
                                 <h3 className="text-2xl font-black text-gray-900">{formatCurrency(stats?.revenue || 0)}</h3>
                                 <div className="p-3 bg-orange-100 text-orange-600 rounded-xl"><DollarSign size={24} /></div>
                             </div>
                         </div>
                         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-                            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Đơn hàng</p>
+                            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Orders</p>
                             <div className="flex justify-between items-end">
                                 <h3 className="text-2xl font-black text-gray-900">{stats?.orders || 0}</h3>
                                 <div className="p-3 bg-blue-100 text-blue-600 rounded-xl"><ShoppingBag size={24} /></div>
                             </div>
                         </div>
                         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-                            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Khách mới</p>
+                            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">New Customers</p>
                             <div className="flex justify-between items-end">
                                 <h3 className="text-2xl font-black text-gray-900">{userStats?.newUsers || 0}</h3>
                                 <div className="p-3 bg-purple-100 text-purple-600 rounded-xl"><UserPlus size={24} /></div>
                             </div>
                         </div>
                         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-                            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Bàn đang mở</p>
+                            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Active Guests</p>
                             <div className="flex justify-between items-end">
                                 <h3 className="text-2xl font-black text-gray-900">{stats?.activeGuests || 0}</h3>
                                 <div className="p-3 bg-green-100 text-green-600 rounded-xl"><Users size={24} /></div>
@@ -192,7 +192,7 @@ const AdminDashboardPage = () => {
                         {/* Chart Section */}
                         <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-bold text-gray-800">Biểu đồ doanh thu</h3>
+                                <h3 className="text-lg font-bold text-gray-800">Revenue Chart</h3>
                             </div>
                             <div className="h-80 w-full">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -235,11 +235,11 @@ const AdminDashboardPage = () => {
                         {/* Top Spenders (VIP) */}
                         <div className="w-full lg:w-96 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                             <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                                <Award className="text-yellow-500" size={20} /> Khách hàng VIP
+                                <Award className="text-yellow-500" size={20} /> VIP Customers
                             </h3>
                             <div className="space-y-4">
                                 {userStats?.topSpenders.length === 0 ? (
-                                    <div className="text-center text-gray-500 text-sm py-4">Chưa có dữ liệu.</div>
+                                    <div className="text-center text-gray-500 text-sm py-4">No data available.</div>
                                 ) : (
                                     userStats?.topSpenders.map((user, index) => (
                                         <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
@@ -258,7 +258,7 @@ const AdminDashboardPage = () => {
                                 )}
                             </div>
 
-                            <h3 className="text-lg font-bold text-gray-800 mt-8 mb-4">Món bán chạy</h3>
+                            <h3 className="text-lg font-bold text-gray-800 mt-8 mb-4">Top Selling Items</h3>
                             <div className="space-y-4">
                                 {topSelling.map((item, index) => (
                                     <div key={index} className="flex items-center justify-between group">
@@ -266,7 +266,7 @@ const AdminDashboardPage = () => {
                                             <span className="text-gray-400 font-bold text-sm">#{index + 1}</span>
                                             <p className="font-medium text-gray-700">{item.name}</p>
                                         </div>
-                                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold">{item.quantity} đã bán</span>
+                                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold">{item.quantity} sold</span>
                                     </div>
                                 ))}
                             </div>
