@@ -173,8 +173,16 @@ export const createReview = async (req: Request, res: Response) => {
 
         res.status(201).json({ data: review });
     } catch (error: any) {
-        console.error("Error creating review:", error);
-        const statusCode = error.message.includes("not found") || error.message.includes("not ordered") ? 400 : 500;
+        const isValidationError =
+            error.message.includes("not found") ||
+            error.message.includes("have ordered") ||
+            error.message.includes("already reviewed");
+
+        if (!isValidationError) {
+            console.error("Error creating review:", error);
+        }
+
+        const statusCode = isValidationError ? 400 : 500;
         res.status(statusCode).json({ error: error.message || "Failed to create review" });
     }
 };

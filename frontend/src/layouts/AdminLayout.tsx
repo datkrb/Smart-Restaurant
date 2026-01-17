@@ -58,12 +58,12 @@ const AdminLayout = () => {
 
   const menuItems = [
     { path: '/admin', name: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-    { path: '/admin/categories', name: 'Danh mục', icon: <Layers size={20} /> },
-    { path: '/admin/menu', name: 'Món ăn', icon: <Utensils size={20} /> },
-    { path: '/admin/tables', name: 'Quản lý bàn', icon: <TableIcon size={20} /> },
-    { path: '/admin/orders', name: 'Đơn hàng', icon: <ClipboardList size={20} /> },
-    { path: '/admin/users', name: 'Quản lý khách', icon: <User size={20} /> },
-    { path: '/admin/employees', name: 'Quản lý nhân viên', icon: <Users size={20} /> },
+    { path: '/admin/categories', name: 'Categories', icon: <Layers size={20} /> },
+    { path: '/admin/menu', name: 'Menu Items', icon: <Utensils size={20} /> },
+    { path: '/admin/tables', name: 'Table Management', icon: <TableIcon size={20} /> },
+    { path: '/admin/orders', name: 'Orders', icon: <ClipboardList size={20} /> },
+    { path: '/admin/users', name: 'Customers', icon: <User size={20} /> },
+    { path: '/admin/employees', name: 'Employees', icon: <Users size={20} /> },
   ];
 
   return (

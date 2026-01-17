@@ -28,11 +28,11 @@ export default function CategoryPage() {
 
   const handleOpenModal = (category?: Category) => {
     if (category) {
-        setEditingCategory(category);
-        setNewCategoryName(category.name);
+      setEditingCategory(category);
+      setNewCategoryName(category.name);
     } else {
-        setEditingCategory(null);
-        setNewCategoryName('');
+      setEditingCategory(null);
+      setNewCategoryName('');
     }
     setIsModalOpen(true);
   };
@@ -41,29 +41,29 @@ export default function CategoryPage() {
     e.preventDefault();
     try {
       if (editingCategory) {
-          // UPDATE
-          await categoryApi.updateCategory(editingCategory.id, newCategoryName);
+        // UPDATE
+        await categoryApi.updateCategory(editingCategory.id, newCategoryName);
       } else {
-          // CREATE
-          await categoryApi.createCategory(newCategoryName);
+        // CREATE
+        await categoryApi.createCategory(newCategoryName);
       }
-      
+
       setIsModalOpen(false);
       setNewCategoryName('');
       setEditingCategory(null);
-      fetchCategories(); 
+      fetchCategories();
     } catch (error) {
-      alert(editingCategory ? "Lỗi cập nhật danh mục" : "Lỗi thêm danh mục");
+      alert(editingCategory ? "Failed to update category" : "Failed to add category");
     }
   };
 
   const handleDeleteCategory = async (id: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa danh mục này?")) return;
+    if (!window.confirm("Are you sure you want to delete this category?")) return;
     try {
       await categoryApi.deleteCategory(id);
       fetchCategories();
     } catch (error: any) {
-      const msg = error.response?.data?.message || "Lỗi xóa danh mục";
+      const msg = error.response?.data?.message || "Failed to delete category";
       alert(msg);
     }
   }
@@ -87,15 +87,15 @@ export default function CategoryPage() {
     if (sortConfig) {
       filtered.sort((a, b) => {
         if (sortConfig.key === 'name') {
-           // Use localeCompare for correct Vietnamese sorting
-           return sortConfig.direction === 'asc' 
-             ? a.name.localeCompare(b.name)
-             : b.name.localeCompare(a.name);
+          // Use localeCompare for correct Vietnamese sorting
+          return sortConfig.direction === 'asc'
+            ? a.name.localeCompare(b.name)
+            : b.name.localeCompare(a.name);
         }
         if (sortConfig.key === 'menuItems') {
-           const aCount = a.menuItems?.length || 0;
-           const bCount = b.menuItems?.length || 0;
-           return sortConfig.direction === 'asc' ? aCount - bCount : bCount - aCount;
+          const aCount = a.menuItems?.length || 0;
+          const bCount = b.menuItems?.length || 0;
+          return sortConfig.direction === 'asc' ? aCount - bCount : bCount - aCount;
         }
         return 0;
       });
@@ -106,7 +106,7 @@ export default function CategoryPage() {
 
   const renderSortIcon = (key: 'name' | 'menuItems') => {
     if (sortConfig?.key !== key) return <ArrowUpDown size={14} className="text-gray-400" />;
-    return sortConfig.direction === 'asc' 
+    return sortConfig.direction === 'asc'
       ? <ArrowUp size={14} className="text-orange-600" />
       : <ArrowDown size={14} className="text-orange-600" />;
   };
@@ -114,44 +114,44 @@ export default function CategoryPage() {
   return (
     <div className="bg-white rounded-xl shadow p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold">Danh sách danh mục</h2>
+        <h2 className="text-xl font-bold">Category List</h2>
         <div className="flex gap-4">
-             <input
-              type="text"
-              placeholder="Tìm kiếm danh mục..."
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <button 
-              onClick={() => handleOpenModal()}
-              className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
-            >
-              + Thêm mới
-            </button>
+          <input
+            type="text"
+            placeholder="Search category..."
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <button
+            onClick={() => handleOpenModal()}
+            className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
+          >
+            + Add New
+          </button>
         </div>
       </div>
       <table className="w-full text-left">
         <thead>
           <tr className="border-b text-gray-500 uppercase text-sm">
-            <th 
-                className="pb-3 cursor-pointer hover:text-gray-700 select-none group"
-                onClick={() => handleSort('name')}
+            <th
+              className="pb-3 cursor-pointer hover:text-gray-700 select-none group"
+              onClick={() => handleSort('name')}
             >
-                <div className="flex items-center gap-1">
-                    Tên {renderSortIcon('name')}
-                </div>
+              <div className="flex items-center gap-1">
+                Name {renderSortIcon('name')}
+              </div>
             </th>
-            <th 
-                className="pb-3 text-center cursor-pointer hover:text-gray-700 select-none group"
-                onClick={() => handleSort('menuItems')}
+            <th
+              className="pb-3 text-center cursor-pointer hover:text-gray-700 select-none group"
+              onClick={() => handleSort('menuItems')}
             >
-                <div className="flex items-center justify-center gap-1">
-                    Số món {renderSortIcon('menuItems')}
-                </div>
+              <div className="flex items-center justify-center gap-1">
+                Item Count {renderSortIcon('menuItems')}
+              </div>
             </th>
-            <th className="pb-3 text-center">Trạng thái</th>
-            <th className="pb-3 text-right">Thao tác</th>
+            <th className="pb-3 text-center">Status</th>
+            <th className="pb-3 text-right">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -165,27 +165,27 @@ export default function CategoryPage() {
                 </span>
               </td>
               <td className="py-4 text-right space-x-2">
-                <button 
+                <button
                   onClick={() => handleOpenModal(cat)}
                   className="text-blue-600 hover:underline font-medium"
                 >
-                  Sửa
+                  Edit
                 </button>
-                <button 
+                <button
                   onClick={() => handleDeleteCategory(cat.id)}
                   className="text-red-600 hover:underline font-medium"
                 >
-                  Xóa
+                  Delete
                 </button>
               </td>
             </tr>
           ))}
           {filteredAndSortedCategories.length === 0 && (
-             <tr>
-                <td colSpan={4} className="py-8 text-center text-gray-500">
-                    {searchTerm ? "Không tìm thấy danh mục phù hợp" : "Chưa có danh mục nào"}
-                </td>
-             </tr>
+            <tr>
+              <td colSpan={4} className="py-8 text-center text-gray-500">
+                {searchTerm ? "No matching categories found" : "No categories yet"}
+              </td>
+            </tr>
           )}
         </tbody>
       </table>
@@ -195,29 +195,29 @@ export default function CategoryPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
           <form onSubmit={handleSaveCategory} className="bg-white p-6 rounded-xl w-96 shadow-lg transform transition-all scale-100">
             <h2 className="text-lg font-bold mb-4 text-gray-800">
-                {editingCategory ? "Cập nhật danh mục" : "Thêm danh mục mới"}
+              {editingCategory ? "Update Category" : "Add New Category"}
             </h2>
             <input
               className="w-full border border-gray-300 p-2 rounded-lg mb-4 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-              placeholder="Tên danh mục (VD: Đồ uống)"
+              placeholder="Category Name (e.g. Drinks)"
               value={newCategoryName}
               onChange={e => setNewCategoryName(e.target.value)}
               required
               autoFocus
             />
             <div className="flex gap-3">
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="flex-1 bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors font-medium"
               >
-                  {editingCategory ? "Cập nhật" : "Lưu"}
+                {editingCategory ? "Update" : "Save"}
               </button>
-              <button 
-                type="button" 
-                onClick={() => setIsModalOpen(false)} 
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
                 className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium"
               >
-                Hủy
+                Cancel
               </button>
             </div>
           </form>
