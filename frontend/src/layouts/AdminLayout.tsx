@@ -13,10 +13,12 @@ import {
   Layers,
   Users
 } from 'lucide-react';
+import { useAuthStore } from '../store/useAuthStore';
 
-const SidebarItem = ({ item }: { item: { path: string; name: string; icon: React.ReactNode } }) => (
+const SidebarItem = ({ item, exact = false }: { item: { path: string; name: string; icon: React.ReactNode }, exact?: boolean }) => (
   <NavLink
     to={item.path}
+    end={exact}
     className={({ isActive }) => `
       flex items-center justify-between p-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden
       ${isActive
@@ -33,13 +35,12 @@ const SidebarItem = ({ item }: { item: { path: string; name: string; icon: React
           </span>
           <span className="font-bold text-sm tracking-wide">{item.name}</span>
         </div>
-        <ChevronRight 
-          size={14} 
-          className={`z-10 transition-all duration-300 ${
-            isActive 
-              ? 'translate-x-0 opacity-100' 
-              : '-translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100'
-          }`} 
+        <ChevronRight
+          size={14}
+          className={`z-10 transition-all duration-300 ${isActive
+            ? 'translate-x-0 opacity-100'
+            : '-translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100'
+            }`}
         />
       </>
     )}
@@ -48,15 +49,21 @@ const SidebarItem = ({ item }: { item: { path: string; name: string; icon: React
 
 const AdminLayout = () => {
   const navigate = useNavigate();
+  const logout = useAuthStore(state => state.logout);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   const menuItems = [
     { path: '/admin', name: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-    { path: '/admin/categories', name: 'Danh mục', icon: <Layers size={20} /> },
-    { path: '/admin/menu', name: 'Món ăn', icon: <Utensils size={20} /> },
-    { path: '/admin/tables', name: 'Quản lý bàn', icon: <TableIcon size={20} /> },
-    { path: '/admin/orders', name: 'Đơn hàng', icon: <ClipboardList size={20} /> },
-    { path: '/admin/users', name: 'Quản lý khách', icon: <User size={20} /> },
-    { path: '/admin/employees', name: 'Quản lý nhân viên', icon: <Users size={20} /> },
+    { path: '/admin/categories', name: 'Categories', icon: <Layers size={20} /> },
+    { path: '/admin/menu', name: 'Menu Items', icon: <Utensils size={20} /> },
+    { path: '/admin/tables', name: 'Table Management', icon: <TableIcon size={20} /> },
+    { path: '/admin/orders', name: 'Orders', icon: <ClipboardList size={20} /> },
+    { path: '/admin/users', name: 'Customers', icon: <User size={20} /> },
+    { path: '/admin/employees', name: 'Employees', icon: <Users size={20} /> },
   ];
 
   return (
@@ -81,8 +88,8 @@ const AdminLayout = () => {
 
         {/* Navigation Items */}
         <nav className="flex-1 p-4 mt-6 space-y-2">
-          {menuItems.map((item) => (
-            <SidebarItem key={item.path} item={item} />
+          {menuItems.map((item, index) => (
+            <SidebarItem key={item.path} item={item} exact={index === 0} />
           ))}
         </nav>
 
@@ -100,7 +107,7 @@ const AdminLayout = () => {
               <p className="text-[10px] font-bold text-slate-500 truncate mt-0.5">Manager Account</p>
             </div>
             <button
-              onClick={() => navigate('/')}
+              onClick={handleLogout}
               className="p-2.5 bg-red-500/10 text-red-500/50 hover:text-red-500 hover:bg-red-500/20 rounded-xl transition-all active:scale-95"
               title="Logout"
             >

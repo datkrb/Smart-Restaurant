@@ -14,13 +14,14 @@ const EntryPoint = () => {
     if (tableId) {
       guestApi.startSession(tableId)
         .then((res: any) => {
-          // Lưu thông tin vào store và chuyển hướng sang menu
-          setSession(tableId, res.id);
+          // Fix: Extract session ID correctly from response
+          const sessionId = res.session?.id || res.id;
+          setSession(tableId, sessionId);
           navigate('/menu');
         })
         .catch((err) => {
           console.error(err);
-          setError("Bàn không hợp lệ hoặc lỗi kết nối server.");
+          setError("Invalid table or server connection error.");
         });
     }
   }, [tableId, navigate, setSession]);
@@ -28,8 +29,8 @@ const EntryPoint = () => {
   if (!tableId) {
     return (
       <div className="flex flex-col items-center justify-center h-screen p-6 text-center">
-        <h1 className="text-2xl font-bold text-red-600">Lỗi: Không tìm thấy bàn</h1>
-        <p className="mt-2 text-gray-600">Vui lòng quét mã QR tại bàn để tiếp tục.</p>
+        <h1 className="text-2xl font-bold text-red-600">Error: Table not found</h1>
+        <p className="mt-2 text-gray-600">Please scan the QR code at your table to continue.</p>
       </div>
     );
   }
@@ -39,7 +40,7 @@ const EntryPoint = () => {
       {error ? (
         <p className="text-red-500 font-bold">{error}</p>
       ) : (
-        <p className="animate-pulse">Đang xác thực thông tin bàn...</p>
+        <p className="animate-pulse">Verifying table information...</p>
       )}
     </div>
   );

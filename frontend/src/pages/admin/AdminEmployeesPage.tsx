@@ -2,18 +2,18 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { userApi } from '../../api/userApi';
 import { Role, User } from '../../types/user.types';
 import { Search, Plus, Trash2, Edit, Filter } from 'lucide-react';
-import { Modal, Form, Input, Select, Button, Tag, Space, App, message } from 'antd'; // Keeping imports as requested
+
 
 const AdminEmployeesPage = () => {
     const [allEmployees, setAllEmployees] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
-    
+
     // Filter & Sort State
     const [search, setSearch] = useState('');
     const [filterRole, setFilterRole] = useState<string>('');
     const [filterStatus, setFilterStatus] = useState<string>('');
     const [sortBy, setSortBy] = useState<string>('createdAt_desc');
-    
+
     // Pagination State
     const [page, setPage] = useState(1);
     const itemsPerPage = 10;
@@ -68,8 +68,8 @@ const AdminEmployeesPage = () => {
         // 3. Search Filter
         if (search.trim()) {
             const lowerSearch = search.toLowerCase();
-            result = result.filter(u => 
-                u.fullName.toLowerCase().includes(lowerSearch) || 
+            result = result.filter(u =>
+                u.fullName.toLowerCase().includes(lowerSearch) ||
                 u.email.toLowerCase().includes(lowerSearch)
             );
         }
@@ -85,7 +85,7 @@ const AdminEmployeesPage = () => {
                     return a.fullName.localeCompare(b.fullName);
                 case 'fullName_desc':
                     return b.fullName.localeCompare(a.fullName);
-                 case 'role_asc':
+                case 'role_asc':
                     return a.role.localeCompare(b.role);
                 default:
                     return 0;
@@ -106,12 +106,12 @@ const AdminEmployeesPage = () => {
 
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm("Bạn có chắc muốn xóa nhân viên này?")) return;
+        if (!window.confirm("Are you sure you want to delete this employee?")) return;
         try {
             await userApi.deleteUser(id);
             fetchEmployees();
         } catch (error) {
-            alert("Không thể xóa user");
+            alert("Failed to delete user");
         }
     };
 
@@ -154,7 +154,7 @@ const AdminEmployeesPage = () => {
             setIsModalOpen(false);
             fetchEmployees();
         } catch (error: any) {
-            alert(error.response?.data?.message || "Có lỗi xảy ra");
+            alert(error.response?.data?.message || "An error occurred");
         }
     };
 
@@ -162,69 +162,69 @@ const AdminEmployeesPage = () => {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-black text-gray-800 tracking-tight">Quản lý Nhân viên</h1>
-                    <p className="text-sm text-gray-500 font-medium mt-1">Quản lý đội ngũ nhân viên và phân quyền (Tổng: {processedEmployees.length})</p>
+                    <h1 className="text-2xl font-black text-gray-800 tracking-tight">Employee Management</h1>
+                    <p className="text-sm text-gray-500 font-medium mt-1">Manage staff and roles (Total: {processedEmployees.length})</p>
                 </div>
                 <button
-                        onClick={handleCreate}
-                        className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2.5 rounded-lg hover:bg-orange-700 transition-all font-medium shadow-sm hover:shadow-md whitespace-nowrap"
-                    >
-                        <Plus size={18} /> Thêm nhân viên
-                    </button>
+                    onClick={handleCreate}
+                    className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2.5 rounded-lg hover:bg-orange-700 transition-all font-medium shadow-sm hover:shadow-md whitespace-nowrap"
+                >
+                    <Plus size={18} /> Add Employee
+                </button>
             </div>
 
             {/* FILTER BAR */}
             <div className="flex flex-col md:flex-row gap-4 mb-6 sticky top-0 bg-white z-10 py-2">
-                 <div className="flex-1 relative">
-                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                     <input 
-                         className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
-                         placeholder="Tìm kiếm nhân viên (Tên, Email)..."
-                         value={search}
-                         onChange={(e) => setSearch(e.target.value)}
-                     />
-                 </div>
+                <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                        placeholder="Search employees (Name, Email)..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
 
-                 <div className="w-full md:w-40 relative">
-                     <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                     <select 
-                         className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none appearance-none bg-white"
-                         value={filterRole}
-                         onChange={e => setFilterRole(e.target.value)}
-                     >
-                         <option value="">Tất cả vai trò</option>
-                         <option value={Role.WAITER}>Phục vụ</option>
-                         <option value={Role.KITCHEN}>Bếp</option>
-                         <option value={Role.ADMIN}>Quản lý</option>
-                     </select>
-                 </div>
+                <div className="w-full md:w-40 relative">
+                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <select
+                        className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none appearance-none bg-white"
+                        value={filterRole}
+                        onChange={e => setFilterRole(e.target.value)}
+                    >
+                        <option value="">All Roles</option>
+                        <option value={Role.WAITER}>Waiter</option>
+                        <option value={Role.KITCHEN}>Kitchen</option>
+                        <option value={Role.ADMIN}>Admin</option>
+                    </select>
+                </div>
 
-                 <div className="w-full md:w-40 relative">
-                     <select 
-                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none appearance-none bg-white"
-                         value={filterStatus}
-                         onChange={e => setFilterStatus(e.target.value)}
-                     >
-                         <option value="">Tất cả trạng thái</option>
-                         <option value="true">Active</option>
-                         <option value="false">Inactive</option>
-                     </select>
-                 </div>
+                <div className="w-full md:w-40 relative">
+                    <select
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none appearance-none bg-white"
+                        value={filterStatus}
+                        onChange={e => setFilterStatus(e.target.value)}
+                    >
+                        <option value="">All Statuses</option>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
 
-                 <div className="w-full md:w-40">
-                     <select 
-                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white"
-                         value={sortBy}
-                         onChange={e => setSortBy(e.target.value)}
-                     >
-                          <option value="createdAt_desc">Mới nhất</option>
-                          <option value="createdAt_asc">Cũ nhất</option>
-                          <option value="fullName_asc">Tên A-Z</option>
-                          <option value="fullName_desc">Tên Z-A</option>
-                          <option value="role_asc">Vai trò</option>
-                     </select>
-                 </div>
-           </div>
+                <div className="w-full md:w-40">
+                    <select
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none bg-white"
+                        value={sortBy}
+                        onChange={e => setSortBy(e.target.value)}
+                    >
+                        <option value="createdAt_desc">Newest</option>
+                        <option value="createdAt_asc">Oldest</option>
+                        <option value="fullName_asc">Name A-Z</option>
+                        <option value="fullName_desc">Name Z-A</option>
+                        <option value="role_asc">Role</option>
+                    </select>
+                </div>
+            </div>
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 {loading ? (
@@ -233,18 +233,18 @@ const AdminEmployeesPage = () => {
                     </div>
                 ) : paginatedEmployees.length === 0 ? (
                     <div className="p-12 text-center text-gray-500">
-                        Không tìm thấy nhân viên nào.
+                        No employees found.
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="bg-gray-50 border-b border-gray-100">
                                 <tr>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Họ tên</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Full Name</th>
                                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Email</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Vai trò</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Hành động</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Role</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -278,25 +278,25 @@ const AdminEmployeesPage = () => {
                         </table>
                     </div>
                 )}
-                 {/* Pagination logic */}
-                 {!loading && totalPages > 1 && (
+                {/* Pagination logic */}
+                {!loading && totalPages > 1 && (
                     <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
                         <button
                             onClick={() => setPage(p => Math.max(1, p - 1))}
                             disabled={page === 1}
                             className="px-3 py-1 rounded bg-gray-100 disabled:opacity-50 text-sm font-medium"
                         >
-                            Trước
+                            Previous
                         </button>
                         <span className="px-3 py-1 text-sm font-bold text-gray-700 self-center">
-                            Trang {page} / {totalPages}
+                            Page {page} / {totalPages}
                         </span>
                         <button
                             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                             disabled={page === totalPages}
                             className="px-3 py-1 rounded bg-gray-100 disabled:opacity-50 text-sm font-medium"
                         >
-                            Sau
+                            Next
                         </button>
                     </div>
                 )}
@@ -306,53 +306,53 @@ const AdminEmployeesPage = () => {
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
-                        <h2 className="text-xl font-bold mb-4">{editingUser ? 'Sửa nhân viên' : 'Thêm nhân viên'}</h2>
+                        <h2 className="text-xl font-bold mb-4">{editingUser ? 'Edit Employee' : 'Add Employee'}</h2>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Họ tên</label>
-                                <input 
-                                    type="text" required 
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                <input
+                                    type="text" required
                                     className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-orange-500 outline-none"
                                     value={formData.fullName}
-                                    onChange={e => setFormData({...formData, fullName: e.target.value})}
+                                    onChange={e => setFormData({ ...formData, fullName: e.target.value })}
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                <input 
-                                    type="email" required 
+                                <input
+                                    type="email" required
                                     className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-orange-500 outline-none"
                                     value={formData.email}
-                                    onChange={e => setFormData({...formData, email: e.target.value})}
-                                    disabled={!!editingUser} 
+                                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                    disabled={!!editingUser}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu {editingUser && '(Để trống nếu không đổi)'}</label>
-                                <input 
-                                    type="password" 
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Password {editingUser && '(Leave blank to keep current)'}</label>
+                                <input
+                                    type="password"
                                     required={!editingUser}
                                     className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-orange-500 outline-none"
                                     value={formData.password}
-                                    onChange={e => setFormData({...formData, password: e.target.value})}
+                                    onChange={e => setFormData({ ...formData, password: e.target.value })}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
-                                <select 
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                                <select
                                     className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-orange-500 outline-none bg-white"
                                     value={formData.role}
-                                    onChange={e => setFormData({...formData, role: e.target.value as Role})}
+                                    onChange={e => setFormData({ ...formData, role: e.target.value as Role })}
                                 >
-                                    <option value={Role.WAITER}>Phục vụ (Waiter)</option>
-                                    <option value={Role.KITCHEN}>Bếp (Kitchen)</option>
-                                    <option value={Role.ADMIN}>Quản lý (Admin)</option>
+                                    <option value={Role.WAITER}>Waiter</option>
+                                    <option value={Role.KITCHEN}>Kitchen</option>
+                                    <option value={Role.ADMIN}>Admin</option>
                                 </select>
                             </div>
-                            
+
                             <div className="flex justify-end gap-2 mt-6">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-lg font-bold text-gray-600 hover:bg-gray-100">Hủy</button>
-                                <button type="submit" className="px-4 py-2 rounded-lg font-bold text-white bg-orange-600 hover:bg-orange-700">Lưu</button>
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-lg font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
+                                <button type="submit" className="px-4 py-2 rounded-lg font-bold text-white bg-orange-600 hover:bg-orange-700">Save</button>
                             </div>
                         </form>
                     </div>

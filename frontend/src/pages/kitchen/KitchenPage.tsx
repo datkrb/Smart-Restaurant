@@ -103,8 +103,8 @@ export default function KitchenPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res: any = await axiosClient.get('/admin/orders?status=PREPARING');
-      const newOrders = res;
+      const res: any = await axiosClient.get('/orders?status=PREPARING');
+      const newOrders = res.data || res;
 
       setOrders(newOrders);
       setLastOrderCount(newOrders.length);
@@ -149,7 +149,7 @@ export default function KitchenPage() {
 
   const handleComplete = async (orderId: string) => {
     try {
-      await axiosClient.patch(`/admin/orders/${orderId}/status`, { status: 'READY' });
+      await axiosClient.patch(`/orders/${orderId}/status`, { status: 'READY' });
       // Xóa ngay khỏi UI để tạo cảm giác mượt mà
       setOrders(prev => prev.filter(o => o.id !== orderId));
       setLastOrderCount(prev => prev - 1);
