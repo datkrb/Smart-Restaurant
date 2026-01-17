@@ -16,6 +16,7 @@ interface Order {
     menuItem: { name: string };
     modifiers: { modifierOption: { name: string } }[];
     note?: string;
+    status: string; // Item status: RECEIVED, PREPARING, READY, CANCELLED
   }[];
 }
 
@@ -221,7 +222,7 @@ export default function KitchenPage() {
 
                 {/* Items List */}
                 <div className="flex-1 p-5 space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
-                  {order.items.map(item => (
+                  {order.items.filter(item => item.status !== 'CANCELLED').map(item => (
                     <div key={item.id} className="relative pl-10">
                       {/* Quantity Indicator */}
                       <div className="absolute left-0 top-0 w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-black text-orange-500 shadow-inner">
