@@ -17,6 +17,7 @@ interface Order {
     menuItem: { name: string };
     modifiers: { modifierOption: { name: string } }[];
     note?: string;
+    status: string;
   }[];
 }
 
@@ -25,11 +26,39 @@ type TabType = 'NEW' | 'READY';
 import { useSocketStore } from '../../store/useSocketStore';
 import { toast } from 'react-hot-toast';
 
+
 export default function WaiterPage() {
   const [activeTab, setActiveTab] = useState<TabType>('NEW');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
+  // Track selected items to ACCEPT (default true). Map<itemId, boolean>
+  const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
+
   const socket = useSocketStore(state => state.socket);
+
+  // Initialize selection when orders load
+  useEffect(() => {
+    if (activeTab === 'NEW' && orders.length > 0) {
+      const newSelection = { ...selectedItems };
+      let changed = false;
+      orders.forEach(order => {
+        order.items.forEach(item => {
+          if (newSelection[item.id] === undefined && item.status === 'RECEIVED') {
+            newSelection[item.id] = true; // Default Accept
+            changed = true;
+          }
+        });
+      });
+      if (changed) setSelectedItems(newSelection);
+    }
+  }, [orders, activeTab]);
+
+  const toggleItemSelection = (itemId: string) => {
+    setSelectedItems(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId]
+    }));
+  };
 
   // Hàm gọi API lấy danh sách đơn hàng tùy theo Tab
   const fetchOrders = async () => {
@@ -49,23 +78,46 @@ export default function WaiterPage() {
     }
   };
 
-  // Cập nhật trạng thái đơn (Duyệt/Hủy)
-  const handleUpdateStatus = async (orderId: string, status: 'PREPARING' | 'CANCELLED') => {
-    if (!window.confirm(`Bạn có chắc muốn ${status === 'PREPARING' ? 'duyệt' : 'hủy'} đơn này?`)) return;
+  // Cập nhật trạng thái đơn (Duyệt/Hủy) theo ITEM
+  const handleConfirmOrder = async (order: Order) => {
+    if (!window.confirm(`Xác nhận duyệt món đã chọn và hủy món chưa chọn?`)) return;
+
+    // Filter items that belong to this order
+    const updatePayload = order.items.map(item => ({
+      itemId: item.id,
+      status: selectedItems[item.id] ? 'PREPARING' : 'CANCELLED'
+    }));
 
     try {
-      await waiterApi.updateOrderStatus(orderId, status);
-      fetchOrders();
+      await waiterApi.updateOrderItems(order.id, updatePayload);
+      toast.success("Đã cập nhật đơn hàng!");
+
+      // Remove processed order from list locally to avoid jump
+      setOrders(prev => prev.filter(o => o.id !== order.id));
+
+      fetchOrders(); // Refresh to be sure
     } catch (error) {
       alert("Lỗi cập nhật trạng thái đơn hàng");
     }
   };
 
+  // Reject Entire Order (Legacy or Quick Action)
+  const handleRejectOrder = async (orderId: string) => {
+    if (!window.confirm(`Bạn có chắc muốn HỦY toàn bộ đơn này?`)) return;
+    try {
+      await waiterApi.updateOrderStatus(orderId, 'CANCELLED');
+      fetchOrders();
+    } catch (error) {
+      alert("Lỗi hủy đơn hàng");
+    }
+  };
+
+
   // Phục vụ món ăn
   const handleServeOrder = async (orderId: string) => {
     try {
       await waiterApi.serveOrder(orderId);
-      alert("Đã đánh dấu phục vụ xong! ✅");
+      toast.success("Đã đánh dấu phục vụ xong! ✅");
       fetchOrders();
     } catch (error) {
       alert("Lỗi cập nhật phục vụ");
@@ -162,8 +214,20 @@ export default function WaiterPage() {
             <div className="p-4 space-y-3 min-h-[120px]">
               {order.items.map(item => (
                 <div key={item.id} className="flex justify-between items-start gap-4">
+                  {activeTab === 'NEW' && (
+                    <div className="pt-1">
+                      <input
+                        type="checkbox"
+                        className="h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        checked={selectedItems[item.id] !== false} // Default true
+                        onChange={() => toggleItemSelection(item.id)}
+                      />
+                    </div>
+                  )}
                   <div className="flex-1">
-                    <p className="font-bold text-gray-800 text-sm leading-tight">{item.menuItem.name}</p>
+                    <p className={`font-bold text-gray-800 text-sm leading-tight ${activeTab === 'NEW' && selectedItems[item.id] === false ? 'line-through text-gray-400' : ''}`}>
+                      {item.menuItem.name}
+                    </p>
                     {item.modifiers.length > 0 && (
                       <p className="text-[10px] text-gray-400 mt-0.5">
                         {item.modifiers.map(m => m.modifierOption.name).join(', ')}
@@ -184,16 +248,16 @@ export default function WaiterPage() {
               {activeTab === 'NEW' ? (
                 <>
                   <button
-                    onClick={() => handleUpdateStatus(order.id, 'CANCELLED')}
+                    onClick={() => handleRejectOrder(order.id)}
                     className="flex-1 bg-white border border-red-200 text-red-500 py-3 rounded-2xl text-xs font-bold hover:bg-red-50 transition-colors"
                   >
-                    Từ chối
+                    Hủy Đơn
                   </button>
                   <button
-                    onClick={() => handleUpdateStatus(order.id, 'PREPARING')}
+                    onClick={() => handleConfirmOrder(order)}
                     className="flex-1 bg-gray-900 text-white py-3 rounded-2xl text-xs font-bold hover:bg-gray-800 shadow-lg shadow-gray-200 transition-all active:scale-95"
                   >
-                    Xác nhận
+                    Duyệt ({order.items.filter(i => selectedItems[i.id] !== false).length})
                   </button>
                 </>
               ) : (

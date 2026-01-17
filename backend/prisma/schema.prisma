@@ -43,6 +43,7 @@ enum OrderStatus {
   READY
   SERVED
   COMPLETED
+  CANCELLED
 }
 
 enum PaymentStatus {
@@ -222,6 +223,7 @@ model OrderItem {
   quantity   Int
   price      Float
   note       String?
+  status     OrderStatus @default(RECEIVED)
 
   order      Order @relation(fields: [orderId], references: [id])
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id])

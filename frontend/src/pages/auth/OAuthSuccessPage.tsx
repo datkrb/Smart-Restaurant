@@ -19,17 +19,26 @@ const OAuthSuccessPage = () => {
       // We might want to fetch full profile later if needed, but for now this is enough to start session
       const user = {
         id: 'google-user', // Temporary ID
-        name: 'Google User',
-        email: '', 
+        fullName: 'Google User',
+        email: '',
         role: role as any,
         avatarUrl: '',
+        isVerified: true,
       };
 
       // Store tokens and update auth state
       login(user, accessToken, refreshToken);
-      
+
       toast.success('Successfully logged in with Google!');
-      navigate('/admin/dashboard');
+      if (role === "ADMIN" || role === "SUPER_ADMIN") {
+        navigate('/admin');
+      } else if (role === "WAITER") {
+        navigate('/waiter');
+      } else if (role === "KITCHEN") {
+        navigate('/kitchen');
+      } else {
+        navigate('/');
+      }
     } else {
       toast.error('Google login failed. Missing tokens.');
       navigate('/login');
