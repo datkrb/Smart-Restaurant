@@ -1,8 +1,8 @@
 import axiosClient from './axiosClient';
 
 export const guestApi = {
-  startSession: (tableId: string) => {
-    return axiosClient.post('/guest/session', { tableId });
+  startSession: (tableId: string, token: string) => {
+    return axiosClient.post('/guest/session', { tableId, token });
   },
   placeOrder: (data: any) => {
     return axiosClient.post('/orders', data);

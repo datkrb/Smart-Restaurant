@@ -85,7 +85,7 @@ export const deleteCategoryById = async (id: string) => {
       const groups = await tx.modifierGroup.findMany({
         where: { menuItemId: item.id },
       });
-      
+
       for (const group of groups) {
         await tx.modifierOption.deleteMany({
           where: { modifierGroupId: group.id },
@@ -174,7 +174,7 @@ export const deleteMenuItem = async (id: string) => {
     const groups = await tx.modifierGroup.findMany({
       where: { menuItemId: id },
     });
-    
+
     for (const group of groups) {
       await tx.modifierOption.deleteMany({
         where: { modifierGroupId: group.id },
@@ -190,7 +190,7 @@ export const deleteMenuItem = async (id: string) => {
     await tx.menuItemPhoto.deleteMany({
       where: { menuItemId: id },
     });
-    
+
     await tx.review.deleteMany({
       where: { menuItemId: id },
     });
@@ -313,12 +313,12 @@ export const getMenuItems = async (options: MenuItemOptions) => {
   const skip = (page - 1) * limit;
 
   // 2. Fix lỗi logic lọc giá (Merge min/max vào chung 1 object)
-  const priceFilter: Prisma.FloatFilter | undefined = 
-    (minPrice || maxPrice) 
+  const priceFilter: Prisma.FloatFilter | undefined =
+    (minPrice || maxPrice)
       ? {
-          ...(minPrice && { gte: minPrice }),
-          ...(maxPrice && { lte: maxPrice }),
-        }
+        ...(minPrice && { gte: minPrice }),
+        ...(maxPrice && { lte: maxPrice }),
+      }
       : undefined;
 
   const where: Prisma.MenuItemWhereInput = {
@@ -335,7 +335,7 @@ export const getMenuItems = async (options: MenuItemOptions) => {
   };
 
   // 3. Fix logic Sort: Mặc định sort theo ngày tạo nếu không chọn gì
-  let orderBy: Prisma.MenuItemOrderByWithRelationInput = { createdAt: 'desc' }; 
+  let orderBy: Prisma.MenuItemOrderByWithRelationInput = { createdAt: 'desc' };
 
   if (sortBy === SortOption.price_ASC) {
     orderBy = { price: "asc" };

@@ -2,11 +2,22 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+import * as tableService from "../table/table.service";
+
 /**
  * Start or get existing table session
+ * Now requires secure token verification
  */
-export const startOrGetSession = async (tableId: string) => {
-    // Check if table exists and is active
+export const startOrGetSession = async (tableId: string, token: string) => {
+    // 1. Verify token first
+    // This will throw error if token is invalid, expired, or version mismatch
+    try {
+        await tableService.verifyQRToken(tableId, token);
+    } catch (error: any) {
+        throw new Error("Invalid or expired QR code. Please scan the latest QR code.");
+    }
+
+    // 2. Check if table exists and is active
     const table = await prisma.table.findUnique({
         where: { id: tableId },
     });
