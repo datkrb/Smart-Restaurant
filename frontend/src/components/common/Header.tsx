@@ -30,10 +30,14 @@ export const Header: React.FC<HeaderProps> = ({ variant = 'default', actionButto
                 <div className="flex items-center gap-4">
                     {variant === 'default' ? (
                         <>
-                            <Link to="/login" className="flex items-center gap-2 p-2 text-text-secondary hover:text-primary transition-colors" title="Login">
+                            <Link
+                                to={user?.role === 'CUSTOMER' ? "/profile" : "/login"}
+                                className="flex items-center gap-2 p-2 text-text-secondary hover:text-primary transition-colors"
+                                title={user?.role === 'CUSTOMER' ? "My Profile" : "Login"}
+                            >
                                 <User size={22} />
                                 <span className="text-sm font-medium text-text-main">
-                                    {user ? user.fullName : 'Khách'}
+                                    {user ? user.fullName : 'Guest'}
                                 </span>
                             </Link>
                         </>
