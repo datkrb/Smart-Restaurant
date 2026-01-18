@@ -6,21 +6,42 @@ import Stripe from 'stripe';
 const stripe = paymentService.stripe;
 
 export const createPaymentIntent = async (req: Request, res: Response) => {
-    try{
-    const {orderId } = req.body;
+  try {
+    const { orderId } = req.body;
     const result = await paymentService.createPaymentIntent(orderId);
-    res.status(200).json(result);}
-    catch(error){
-        console.log(error);
-        res.status(500).json({error: "Failed to create payment intent"});
-    }
+    res.status(200).json(result);
+  }
+  catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Failed to create payment intent" });
+  }
 };
 export const confirmCashPayment = async (req: Request, res: Response) => {
   try {
-    const { orderId } = req.body;
-    await paymentService.processSuccessPayment(orderId, PaymentMethod.CASH);
+    const { orderId, paymentMethod, discountAmount, discountType, finalAmount } = req.body;
+
+    // Map payment method string to enum
+    let method: PaymentMethod = PaymentMethod.CASH;
+    if (paymentMethod === 'CARD' || paymentMethod === 'STRIPE') {
+      method = PaymentMethod.STRIPE;
+    } else if (paymentMethod === 'MOMO') {
+      method = PaymentMethod.MOMO;
+    } else if (paymentMethod === 'VNPAY') {
+      method = PaymentMethod.VNPAY;
+    } else if (paymentMethod === 'ZALOPAY') {
+      method = PaymentMethod.ZALOPAY;
+    }
+
+    await paymentService.processSuccessPayment(
+      orderId,
+      method,
+      discountAmount || 0,
+      discountType || null,
+      finalAmount || null
+    );
     res.json({ message: 'Payment confirmed. Session closed.' });
   } catch (error: any) {
+    console.error(error);
     res.status(400).json({ message: error.message });
   }
 };
@@ -48,7 +69,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
     const orderId = paymentIntent.metadata.orderId;
 
     console.log(`💰 Payment succeeded for Order ${orderId}`);
-    
+
     // Gọi service update DB
     if (orderId) {
       await paymentService.processSuccessPayment(orderId, PaymentMethod.STRIPE);

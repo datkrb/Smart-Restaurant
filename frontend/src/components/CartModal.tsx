@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../store/useCartStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { guestApi } from '../api/guestApi';
+import toast from 'react-hot-toast';
 
 export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { items, totalAmount, clearCart, updateQuantity, removeFromCart } = useCartStore();
@@ -16,12 +17,12 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
 
   const handleOrder = async () => {
     if (!sessionId) {
-      alert("Error: Session not found! Please scan QR code again.");
+      toast.error("Session not found! Please scan QR code again.");
       return;
     }
 
     if (items.length === 0) {
-      alert("Your cart is empty!");
+      toast.error("Your cart is empty!");
       return;
     }
 
@@ -36,7 +37,7 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
         }))
       });
 
-      alert("🎉 Order placed successfully! Kitchen will prepare your food.");
+      toast.success("Order placed successfully!", { icon: '🎉', duration: 3000 });
       clearCart();
       setOrderNotes('');
       onClose();
@@ -44,7 +45,7 @@ export default function CartModal({ isOpen, onClose }: { isOpen: boolean; onClos
 
     } catch (error) {
       console.error(error);
-      alert("❌ Failed to place order. Please try again.");
+      toast.error("Failed to place order. Please try again.");
     } finally {
       setIsOrdering(false);
     }

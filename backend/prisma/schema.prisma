@@ -43,6 +43,7 @@ enum OrderStatus {
   READY
   SERVED
   COMPLETED
+  CANCELLED
 }
 
 enum PaymentStatus {
@@ -80,6 +81,7 @@ model User {
   forgotPasswordToken  String?   // Token dùng để reset pass
 
   assignedTables Table[]
+  tableSessions  TableSession[]
   orders     Order[]
   reviews    Review[]
 }
@@ -114,11 +116,13 @@ model Table {
 model TableSession {
   id        String   @id @default(uuid())
   tableId   String
+  waiterId  String?
   status    TableSessionStatus @default(OPEN)
   startedAt DateTime @default(now())
   endedAt   DateTime?
 
   table     Table @relation(fields: [tableId], references: [id])
+  waiter    User? @relation(fields: [waiterId], references: [id])
   order     Order?
 }
 
@@ -222,6 +226,7 @@ model OrderItem {
   quantity   Int
   price      Float
   note       String?
+  status     OrderStatus @default(RECEIVED)
 
   order      Order @relation(fields: [orderId], references: [id])
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
@@ -242,12 +247,15 @@ model OrderItemModifier {
 // PAYMENT
 // =========================
 model Payment {
-  id        String   @id @default(uuid())
-  orderId   String   @unique
-  method    PaymentMethod
-  status    PaymentStatus @default(PENDING)
-  amount    Float
-  paidAt    DateTime?
+  id             String   @id @default(uuid())
+  orderId        String   @unique
+  method         PaymentMethod
+  status         PaymentStatus @default(PENDING)
+  amount         Float
+  discountAmount Float    @default(0)
+  discountType   String?  // 'PERCENTAGE' or 'FIXED'
+  finalAmount    Float?
+  paidAt         DateTime?
 
   order     Order @relation(fields: [orderId], references: [id])
 }

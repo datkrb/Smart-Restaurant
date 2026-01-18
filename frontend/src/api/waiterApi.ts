@@ -9,5 +9,9 @@ export const waiterApi = {
 
     // Update order status (accept/reject)
     updateOrderStatus: (orderId: string, status: string) =>
-        axiosClient.patch(`/orders/${orderId}/status`, { status })
+        axiosClient.patch(`/orders/${orderId}/status`, { status }),
+
+    // Update specific items
+    updateOrderItems: (orderId: string, items: { itemId: string; status: string }[]) =>
+        axiosClient.patch(`/orders/${orderId}/items`, { items })
 };

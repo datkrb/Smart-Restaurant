@@ -13,6 +13,9 @@ import EntryPoint from './pages/EntryPoint';
 import MenuPage from './pages/MenuPage';
 import OrderTrackingPage from './pages/guest/OrderTrackingPage';
 
+// Customer Pages
+import ProfilePage from './pages/customer/ProfilePage';
+
 //Auth Pages
 import LoginPage from './pages/auth/LoginPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
@@ -32,7 +35,6 @@ import AdminEmployeesPage from './pages/admin/AdminEmployeesPage';
 
 // Staff Pages (Waiter & Kitchen)
 import WaiterPage from './pages/waiter/WaiterPage';
-import TableMapPage from './pages/waiter/TableMapPage';
 import KitchenPage from './pages/kitchen/KitchenPage';
 
 function App() {
@@ -61,6 +63,13 @@ function App() {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
+        {/* Customer Flow (Protected - CUSTOMER only) */}
+        <Route path="/profile" element={
+          <ProtectedRoute allowedRoles={['CUSTOMER']}>
+            <ProfilePage />
+          </ProtectedRoute>
+        } />
+
         {/* Administration Flow */}
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
@@ -77,9 +86,16 @@ function App() {
         </Route>
 
         {/* Service & Operational Flow */}
-        <Route path="/waiter" element={<WaiterPage />} />
-        <Route path="/waiter/map" element={<TableMapPage />} />
-        <Route path="/kitchen" element={<KitchenPage />} />
+        <Route path="/waiter" element={
+          <ProtectedRoute allowedRoles={['WAITER', 'KITCHEN', 'ADMIN', 'SUPER_ADMIN']}>
+            <WaiterPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/kitchen" element={
+          <ProtectedRoute allowedRoles={['KITCHEN', 'WAITER', 'ADMIN', 'SUPER_ADMIN']}>
+            <KitchenPage />
+          </ProtectedRoute>
+        } />
 
         {/* Fallback 404 Route */}
         <Route path="*" element={
