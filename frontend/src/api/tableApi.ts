@@ -11,13 +11,13 @@ export const tableApi = {
     // 2. Create Table
     // Response: Table object
     createTable: (name: string, capacity: number) => {
-        return axiosClient.post<Table>("/tables", { name, capacity }) 
+        return axiosClient.post<Table>("/tables", { name, capacity })
     },
 
     // 3. Update Table (Status, Name, Capacity)
     // Response: Updated Table
     updateTable: (id: string, data: Partial<Table>) => {
-        return axiosClient.patch<Table>(`/tables/${id}`, data) 
+        return axiosClient.patch<Table>(`/tables/${id}`, data)
     },
 
     // 4. Get Table QR Code
@@ -26,7 +26,19 @@ export const tableApi = {
         return axiosClient.get<{ data: string }>(`/tables/${id}/qr`)
     },
 
-    // 5. Delete Table
+    // 5. Regenerate QR Code for single table
+    // Response: { data: string, message: string }
+    regenerateTableQR: (id: string) => {
+        return axiosClient.post<{ data: string; message: string }>(`/tables/${id}/regenerate-qr`)
+    },
+
+    // 6. Regenerate ALL QR Codes
+    // Response: { message: string, data: { total, successful, failed, results } }
+    regenerateAllQRs: () => {
+        return axiosClient.post<{ message: string; data: any }>("/tables/regenerate-all-qr")
+    },
+
+    // 7. Delete Table
     // Response: { message: string }
     deleteTable: (id: string) => {
         return axiosClient.delete<{ message: string }>(`/tables/${id}`)

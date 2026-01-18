@@ -11,13 +11,14 @@ const EntryPoint = () => {
   const setSession = useSessionStore((state) => state.setSession);
   const { user, logout } = useAuthStore();
   const tableId = searchParams.get('tableId');
+  const token = searchParams.get('token');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (tableId) {
+    if (tableId && token) {
       setIsLoading(true);
-      guestApi.startSession(tableId)
+      guestApi.startSession(tableId, token)
         .then((res: any) => {
           const sessionId = res.session?.id || res.id;
           setSession(tableId, sessionId);
@@ -25,11 +26,15 @@ const EntryPoint = () => {
         })
         .catch((err) => {
           console.error(err);
-          setError("Invalid table or server connection error.");
+          // Show user-friendly error from backend (e.g. "Invalid or expired QR code")
+          const msg = err.response?.data?.error || "Invalid table or server connection error.";
+          setError(msg);
         })
         .finally(() => setIsLoading(false));
+    } else if (tableId && !token) {
+      setError("This QR code is invalid (missing security token). Please ask staff for a new QR code.");
     }
-  }, [tableId, navigate, setSession]);
+  }, [tableId, token, navigate, setSession]);
 
   const handleLogout = () => {
     logout();

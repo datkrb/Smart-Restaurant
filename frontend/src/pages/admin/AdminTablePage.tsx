@@ -4,11 +4,16 @@ import { tableApi } from '../../api/tableApi';
 import axiosClient from '../../api/axiosClient';
 import { Table } from '../../types';
 import { ui } from '../../utils/swalHelper';
+import { RefreshCw } from 'lucide-react';
+import { jsPDF } from "jspdf";
 
 export default function AdminTablePage() {
   const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedQR, setSelectedQR] = useState<Table | null>(null);
+  const [regeneratingAll, setRegeneratingAll] = useState(false);
+  const [regeneratingIds, setRegeneratingIds] = useState<Set<string>>(new Set());
+  const [qrTimestamps, setQrTimestamps] = useState<Record<string, number>>({});
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -16,6 +21,9 @@ export default function AdminTablePage() {
 
   const [newTable, setNewTable] = useState({ name: '', capacity: 4 });
   const [editingTable, setEditingTable] = useState<Table | null>(null);
+
+  // Get dynamic frontend URL
+  const frontendUrl = import.meta.env.VITE_FRONTEND_URL || window.location.origin;
 
   useEffect(() => {
     fetchData();
@@ -25,17 +33,8 @@ export default function AdminTablePage() {
     setLoading(true);
     try {
       const tableRes = await tableApi.getTables();
-      // Assuming user confirmed this structure: tableRes.data is { data: Table[] }
-      // BUT user code was tableRes.data.data. 
-      // If tableApi returns Promise<{ data: Table[] }> and axios unwraps, then tableRes = { data: [...] }.
-      // So tableRes.data is the array.
-      // User wrote tableRes.data.data. This implies tableRes is NOT unwrapped or has nested data.
-      // I will trust the user's manual edit for now:
       const tables = (tableRes as any).data?.data || (tableRes as any).data || [];
-      // Safe check to avoid crash if they are wrong
-
       setTables(Array.isArray(tables) ? tables : []);
-
     } catch (error) {
       console.error("Error fetching data", error);
     } finally {
@@ -86,6 +85,57 @@ export default function AdminTablePage() {
     }
   }
 
+  const handleRegenerateQR = async (id: string) => {
+    setRegeneratingIds(prev => new Set(prev).add(id));
+    try {
+      await tableApi.regenerateTableQR(id);
+
+      // Update timestamp to force QR re-render
+      setQrTimestamps(prev => ({ ...prev, [id]: Date.now() }));
+
+      ui.alertSuccess("QR code regenerated successfully");
+      fetchData(); // Refresh to get new QR
+    } catch (error) {
+      console.error(`[Frontend] Failed to regenerate QR:`, error);
+      ui.alertError("Failed to regenerate QR code");
+    } finally {
+      setRegeneratingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }
+  };
+
+  const handleRegenerateAllQRs = async () => {
+    const confirm = await ui.confirmDelete(
+      "Regenerate ALL QR Codes?",
+      "This will invalidate all existing QR codes. Customers will need to scan the new codes."
+    );
+
+    if (confirm.isConfirmed) {
+      setRegeneratingAll(true);
+      try {
+        const result = await tableApi.regenerateAllQRs();
+
+        // Update timestamps for all tables to force re-render
+        const newTimestamps: Record<string, number> = {};
+        tables.forEach(table => {
+          newTimestamps[table.id] = Date.now();
+        });
+        setQrTimestamps(newTimestamps);
+
+        ui.alertSuccess((result as any).data.message || "All QR codes regenerated successfully");
+        fetchData(); // Refresh all tables
+      } catch (error) {
+        console.error(`[Frontend] Failed to regenerate all QR codes:`, error);
+        ui.alertError("Failed to regenerate QR codes");
+      } finally {
+        setRegeneratingAll(false);
+      }
+    }
+  };
+
   if (loading) return (
     <div className="p-6 flex justify-center items-center min-h-[400px]">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
@@ -99,12 +149,22 @@ export default function AdminTablePage() {
           <h1 className="text-2xl font-bold text-gray-800">Table & QR Management</h1>
           <p className="text-gray-500 text-sm mt-1">Manage table layout, QR codes and status</p>
         </div>
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2.5 rounded-lg hover:bg-orange-700 transition-all font-medium shadow-sm hover:shadow-md"
-        >
-          <span>+ Add New Table</span>
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleRegenerateAllQRs}
+            disabled={regeneratingAll}
+            className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw size={18} className={regeneratingAll ? 'animate-spin' : ''} />
+            <span>{regeneratingAll ? 'Regenerating...' : 'Regenerate All QR'}</span>
+          </button>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2.5 rounded-lg hover:bg-orange-700 transition-all font-medium shadow-sm hover:shadow-md"
+          >
+            <span>+ Add New Table</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -124,7 +184,7 @@ export default function AdminTablePage() {
                 onClick={() => setSelectedQR(table)}
               >
                 <QRCodeSVG
-                  value={table.qrCodeUrl || `http://localhost:3000/table/${table.id}`} // Fallback URL
+                  value={`${table.qrCodeUrl || `${frontendUrl}/?tableId=${table.id}`}${qrTimestamps[table.id] ? `&t=${qrTimestamps[table.id]}` : ''}`}
                   size={100}
                   className="w-full h-full"
                   level="M"
@@ -153,8 +213,17 @@ export default function AdminTablePage() {
             </div>
 
             <button
+              onClick={() => handleRegenerateQR(table.id)}
+              disabled={regeneratingIds.has(table.id)}
+              className="w-full mt-3 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-bold text-sm hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <RefreshCw size={14} className={regeneratingIds.has(table.id) ? 'animate-spin' : ''} />
+              {regeneratingIds.has(table.id) ? 'Regenerating...' : 'Regenerate QR'}
+            </button>
+
+            <button
               onClick={() => setSelectedQR(table)}
-              className="w-full mt-3 px-3 py-2 rounded-lg bg-orange-50 text-orange-700 font-bold text-sm hover:bg-orange-100 transition-colors"
+              className="w-full mt-2 px-3 py-2 rounded-lg bg-orange-50 text-orange-700 font-bold text-sm hover:bg-orange-100 transition-colors"
             >
               View Large QR
             </button>
@@ -273,7 +342,7 @@ export default function AdminTablePage() {
             <div className="bg-white p-4 rounded-xl border-4 border-orange-100 mb-6">
               <QRCodeSVG
                 id={`qr-${selectedQR.id}`}
-                value={selectedQR.qrCodeUrl || `http://localhost:3000/table/${selectedQR.id}`}
+                value={`${selectedQR.qrCodeUrl || `${frontendUrl}/?tableId=${selectedQR.id}`}${qrTimestamps[selectedQR.id] ? `&t=${qrTimestamps[selectedQR.id]}` : ''}`}
                 size={200}
                 level="H"
               />
@@ -284,20 +353,88 @@ export default function AdminTablePage() {
                 onClick={() => {
                   const svg = document.getElementById(`qr-${selectedQR.id}`);
                   if (svg) {
+                    // Convert SVG to PNG for better print quality
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
                     const svgData = new XMLSerializer().serializeToString(svg);
-                    const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement("a");
-                    link.href = url;
-                    link.download = `QR_${selectedQR.name}.svg`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                    const img = new Image();
+
+                    canvas.width = 800;
+                    canvas.height = 800;
+
+                    img.onload = () => {
+                      ctx?.drawImage(img, 0, 0, 800, 800);
+                      canvas.toBlob((blob) => {
+                        if (blob) {
+                          const url = URL.createObjectURL(blob);
+                          const link = document.createElement("a");
+                          link.href = url;
+                          link.download = `QR_${selectedQR.name}.png`;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                          URL.revokeObjectURL(url);
+                        }
+                      }, 'image/png');
+                    };
+
+                    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
                   }
                 }}
                 className="w-full bg-orange-600 text-white py-3 rounded-lg font-bold shadow-sm hover:bg-orange-700 transition-colors"
               >
-                Download (SVG)
+                Download (PNG)
+              </button>
+              <button
+                onClick={() => {
+                  const svg = document.getElementById(`qr-${selectedQR.id}`);
+                  if (svg) {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const svgData = new XMLSerializer().serializeToString(svg);
+                    const img = new Image();
+
+                    // High resolution for PDF
+                    canvas.width = 1000;
+                    canvas.height = 1000;
+
+                    img.onload = () => {
+                      ctx?.drawImage(img, 0, 0, 1000, 1000);
+                      const imgData = canvas.toDataURL('image/png');
+
+                      // Create PDF
+                      const doc = new jsPDF();
+                      const width = doc.internal.pageSize.getWidth();
+                      const height = doc.internal.pageSize.getHeight();
+
+                      // Title
+                      doc.setFontSize(24);
+                      doc.text(selectedQR.name, width / 2, 40, { align: 'center' });
+
+                      // Instructions
+                      doc.setFontSize(14);
+                      doc.setTextColor(100);
+                      doc.text("Scan to order", width / 2, 50, { align: 'center' });
+
+                      // QR Image (Centered)
+                      const qrSize = 100;
+                      doc.addImage(imgData, 'PNG', (width - qrSize) / 2, 60, qrSize, qrSize);
+
+                      // Footer
+                      doc.setFontSize(10);
+                      doc.setTextColor(150);
+                      doc.text("Smart Restaurant System", width / 2, height - 20, { align: 'center' });
+
+                      // Download
+                      doc.save(`QR_${selectedQR.name}.pdf`);
+                    };
+
+                    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                  }
+                }}
+                className="w-full bg-red-600 text-white py-3 rounded-lg font-bold shadow-sm hover:bg-red-700 transition-colors"
+              >
+                Download (PDF)
               </button>
               <button
                 onClick={() => setSelectedQR(null)}

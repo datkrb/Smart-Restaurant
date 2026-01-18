@@ -7,13 +7,13 @@ import * as guestService from "./guest.service";
  */
 export const startSession = async (req: Request, res: Response) => {
     try {
-        const { tableId } = req.body;
+        const { tableId, token } = req.body;
 
-        if (!tableId) {
-            return res.status(400).json({ error: "Table ID is required" });
+        if (!tableId || !token) {
+            return res.status(400).json({ error: "Table ID and QR Token are required" });
         }
 
-        const result = await guestService.startOrGetSession(tableId);
+        const result = await guestService.startOrGetSession(tableId, token);
 
         const statusCode = result.isNew ? 201 : 200;
         const message = result.isNew ? "Session started successfully" : "Session already exists";
