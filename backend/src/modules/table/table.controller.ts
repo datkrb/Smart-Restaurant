@@ -62,3 +62,38 @@ export const getTableQR = async (req: Request, res: Response) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+// Regenerate QR Code for a single table
+export const regenerateTableQR = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const qrData = await tableService.regenerateTableQRCode(id);
+    res.json({ data: qrData, message: "QR code regenerated successfully" });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Regenerate ALL QR Codes
+export const regenerateAllQRs = async (req: Request, res: Response) => {
+  try {
+    const result = await tableService.regenerateAllQRCodes();
+    res.json({
+      message: `Successfully regenerated ${result.successful} out of ${result.total} QR codes`,
+      data: result
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Verify QR Token
+export const verifyQRToken = async (req: Request, res: Response) => {
+  try {
+    const { tableId, token } = req.body;
+    const result = await tableService.verifyQRToken(tableId, token);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};

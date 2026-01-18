@@ -107,6 +107,8 @@ model Table {
   capacity     Int
   isActive     Boolean  @default(true)
   waiterId     String?
+  qrSecret     String?  // Secret for signing QR tokens
+  qrVersion    Int      @default(1) // Version to invalidate old QR codes
 
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   waiter       User?      @relation(fields: [waiterId], references: [id])
