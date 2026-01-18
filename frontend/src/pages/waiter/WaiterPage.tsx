@@ -94,16 +94,21 @@ export default function WaiterPage() {
 
   // Update order items (Accept/Reject individual items)
   const handleConfirmOrder = async (order: Order) => {
-    if (!window.confirm(`Confirm selected items and cancel unselected ones?`)) return;
+    const updatePayload = order.items
+      .filter(item => item.status === 'RECEIVED') // Only update RECEIVED items
+      .map(item => ({
+        itemId: item.id,
+        status: selectedItems[item.id] !== false ? 'PREPARING' : 'CANCELLED'
+      }));
 
-    const updatePayload = order.items.map(item => ({
-      itemId: item.id,
-      status: selectedItems[item.id] !== false ? 'PREPARING' : 'CANCELLED'
-    }));
+    if (updatePayload.length === 0) {
+      toast.error("No items to confirm");
+      return;
+    }
 
     try {
       await waiterApi.updateOrderItems(order.id, updatePayload);
-      toast.success("Order updated!");
+      toast.success(`Confirmed ${updatePayload.filter(i => i.status === 'PREPARING').length} items!`, { icon: '✅' });
       setOrders(prev => prev.filter(o => o.id !== order.id));
       fetchOrders();
     } catch (error) {
@@ -113,10 +118,9 @@ export default function WaiterPage() {
 
   // Reject entire order
   const handleRejectOrder = async (orderId: string) => {
-    if (!window.confirm(`Are you sure you want to CANCEL this entire order?`)) return;
     try {
       await waiterApi.updateOrderStatus(orderId, 'CANCELLED');
-      toast.success("Order cancelled");
+      toast.success("Order cancelled", { icon: '❌' });
       fetchOrders();
     } catch (error) {
       toast.error("Failed to cancel order");
@@ -178,6 +182,18 @@ export default function WaiterPage() {
           }
         }
       });
+
+      // Bill requested notification - real-time update
+      socket.on('bill_requested', (updatedOrder: Order) => {
+        toast.success(`${updatedOrder.tableSession?.table?.name || 'A table'} requested the bill!`, { icon: '💵', duration: 5000 });
+        // Refresh if on BILLING tab or update orders list
+        if (activeTab === 'BILLING') {
+          fetchOrders();
+        } else {
+          // Update the order in any tab if it exists
+          setOrders(prev => prev.map(o => o.id === updatedOrder.id ? { ...o, billRequested: true } : o));
+        }
+      });
     }
 
     const interval = setInterval(fetchOrders, 30000);
@@ -185,6 +201,7 @@ export default function WaiterPage() {
       clearInterval(interval);
       socket?.off('new_order');
       socket?.off('order_status_updated');
+      socket?.off('bill_requested');
     };
   }, [activeTab, socket]);
 
@@ -266,7 +283,12 @@ export default function WaiterPage() {
             </div>
 
             <div className="p-4 space-y-3 min-h-[120px]">
-              {order.items.filter(i => i.status !== 'CANCELLED').map(item => (
+              {order.items.filter(i => {
+                // In NEW tab, only show RECEIVED items (not READY, PREPARING, etc.)
+                if (activeTab === 'NEW') return i.status === 'RECEIVED';
+                // In other tabs, show all non-cancelled items
+                return i.status !== 'CANCELLED';
+              }).map(item => (
                 <div key={item.id} className="flex justify-between items-start gap-4">
                   {activeTab === 'NEW' && (
                     <div className="pt-1">
@@ -324,7 +346,7 @@ export default function WaiterPage() {
                     onClick={() => handleConfirmOrder(order)}
                     className="flex-1 bg-gray-900 text-white py-3 rounded-2xl text-xs font-bold hover:bg-gray-800 shadow-lg shadow-gray-200 transition-all active:scale-95"
                   >
-                    Confirm ({order.items.filter(i => selectedItems[i.id] !== false).length})
+                    Confirm ({order.items.filter(i => i.status === 'RECEIVED' && selectedItems[i.id] !== false).length})
                   </button>
                 </>
               )}

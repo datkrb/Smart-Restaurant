@@ -145,30 +145,14 @@ const OrderTrackingPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                    {(() => {
-                        const groupedItems = order.items.reduce((acc: any[], item) => {
-                            const modifierString = item.modifiers
-                                ?.map((m: any) => m.modifierOption.name)
-                                .sort()
-                                .join(', ') || '';
+                    {order.items.map((item, idx) => {
+                        const modifierString = item.modifiers
+                            ?.map((m: any) => m.modifierOption.name)
+                            .sort()
+                            .join(', ') || '';
 
-                            const existingItem = acc.find(
-                                (i) => i.menuItem.name === item.menuItem.name && i.modifierString === modifierString
-                            );
-
-                            if (existingItem) {
-                                existingItem.quantity += item.quantity;
-                            } else {
-                                acc.push({
-                                    ...item,
-                                    modifierString
-                                });
-                            }
-                            return acc;
-                        }, []);
-
-                        return groupedItems.map((item, idx) => (
-                            <div key={idx} className="flex justify-between items-start">
+                        return (
+                            <div key={item.id} className="flex justify-between items-start">
                                 <div className="flex-1">
                                     <div className="flex justify-between font-medium text-gray-800">
                                         <span className={item.status === 'CANCELLED' ? 'line-through text-gray-400' : ''}>
@@ -180,22 +164,15 @@ const OrderTrackingPage = () => {
                                         </span>
                                     </div>
 
-                                    {/* Item Status Badge */}
-                                    <div className="flex gap-2 items-center mt-1">
-                                        {item.status === 'CANCELLED' && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold">CANCELLED</span>}
-                                        {item.status === 'PREPARING' && <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded font-bold">COOKING</span>}
-                                        {item.status === 'READY' && <span className="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded font-bold">READY</span>}
-                                    </div>
-
-                                    {item.modifierString && (
+                                    {modifierString && (
                                         <div className="text-xs text-gray-500 mt-1 pl-2 border-l-2 border-gray-200">
-                                            {item.modifierString}
+                                            {modifierString}
                                         </div>
                                     )}
                                 </div>
                             </div>
-                        ));
-                    })()}
+                        );
+                    })}
                 </div>
 
                 <div className="border-t border-dashed pt-3 flex justify-between items-center">

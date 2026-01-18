@@ -88,7 +88,7 @@ export const updateUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
-    
+
     // Validate role update permissions if necessary
     // For now, allow admin to update any field provided in body
 
@@ -104,6 +104,133 @@ export const deleteUser = async (req: Request, res: Response) => {
     const { id } = req.params;
     await userService.deleteUser(id);
     res.status(200).json({ message: "User deleted successfully" });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Get current user profile (for logged-in customers)
+export const getProfile = async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any)?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const user = await userService.getUserById(userId);
+    res.status(200).json({ data: user });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Update current user profile (for logged-in customers)
+export const updateProfile = async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any)?.id;
+    const { fullName } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Validate input
+    if (!fullName || fullName.trim().length === 0) {
+      return res.status(400).json({ message: "Full name is required" });
+    }
+
+    if (fullName.trim().length < 2) {
+      return res.status(400).json({ message: "Full name must be at least 2 characters" });
+    }
+
+    if (fullName.trim().length > 100) {
+      return res.status(400).json({ message: "Full name must not exceed 100 characters" });
+    }
+
+    // Only allow updating fullName for now
+    const updatedUser = await userService.updateUserById(userId, {
+      fullName: fullName.trim(),
+    });
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      data: updatedUser
+    });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Change password (for logged-in customers)
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any)?.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Validate input
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current password and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters" });
+    }
+
+    if (newPassword.length > 50) {
+      return res.status(400).json({ message: "New password must not exceed 50 characters" });
+    }
+
+    await userService.changePassword(userId, currentPassword, newPassword);
+
+    res.status(200).json({ message: "Password changed successfully" });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Upload avatar (for logged-in customers)
+export const uploadAvatar = async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any)?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const avatarUrl = `/uploads/${req.file.filename}`;
+    const updatedUser = await userService.updateUserById(userId, { avatarUrl });
+
+    res.status(200).json({
+      message: "Avatar uploaded successfully",
+      data: updatedUser
+    });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Get order history (for logged-in customers)
+export const getOrderHistory = async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any)?.id;
+    const { page = 1, limit = 10 } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const orders = await userService.getOrderHistory(userId, Number(page), Number(limit));
+
+    res.status(200).json(orders);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }

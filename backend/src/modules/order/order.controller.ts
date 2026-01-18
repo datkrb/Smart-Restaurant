@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import * as orderService from "./order.service";
 import { OrderStatus } from "@prisma/client";
+import jwt from "jsonwebtoken";
 
 /**
  * Get all orders (Admin/Staff)
@@ -69,14 +70,28 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     }
 };
 
+
 /**
  * Create a new order (Guest creates from cart)
  */
 export const createOrder = async (req: Request, res: Response) => {
     try {
         const { tableSessionId, items } = req.body;
+        let userId: string | undefined;
 
-        const order = await orderService.createOrder({ tableSessionId, items });
+        // Try to get user from token if available
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+            const token = authHeader.substring(7);
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key") as any;
+                userId = decoded.userId; // JWT uses 'userId' not 'id'
+            } catch (err) {
+                // Ignore invalid token, proceed as guest
+            }
+        }
+
+        const order = await orderService.createOrder({ tableSessionId, items, userId });
 
         // Emit event for Kitchen and Waiter (realtime)
         const { io } = require("../../app");

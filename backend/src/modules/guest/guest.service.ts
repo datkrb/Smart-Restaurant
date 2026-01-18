@@ -93,17 +93,14 @@ export const getMenuItems = async (params: {
         where.isChefRecommended = true;
     }
 
-    // Build orderBy object safely
-    const orderByField = sortBy === "price" || sortBy === "name" ? sortBy : "name";
-    const orderBy: any = {};
-    orderBy[orderByField] = "asc";
+    // Build orderBy based on sortBy parameter
+    let orderBy: any;
 
-    // Get items
-    const [items, total] = await Promise.all([
-        prisma.menuItem.findMany({
+    if (sortBy === "popular") {
+        // For popular sorting, we need to aggregate order counts
+        // This requires a more complex query
+        const itemsWithCounts = await prisma.menuItem.findMany({
             where,
-            skip,
-            take,
             include: {
                 category: true,
                 photos: {
@@ -114,22 +111,70 @@ export const getMenuItems = async (params: {
                         options: true,
                     },
                 },
+                _count: {
+                    select: {
+                        orderItems: true, // Count how many times this item was ordered
+                    },
+                },
             },
-            orderBy,
-        }),
-        prisma.menuItem.count({ where }),
-    ]);
+        });
 
-    return {
-        items,
-        pagination: {
-            page,
-            limit,
-            total,
-            totalPages: Math.ceil(total / limit),
-        },
-    };
+        // Sort by order count in memory
+        const sortedItems = itemsWithCounts.sort((a, b) =>
+            b._count.orderItems - a._count.orderItems
+        );
 
+        // Apply pagination
+        const paginatedItems = sortedItems.slice(skip, skip + take);
+        const total = sortedItems.length;
+
+        return {
+            items: paginatedItems,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    } else {
+        // Default sorting (name, price, etc.)
+        const orderByField = sortBy === "price" || sortBy === "name" ? sortBy : "name";
+        orderBy = {};
+        orderBy[orderByField] = "asc";
+
+        // Get items
+        const [items, total] = await Promise.all([
+            prisma.menuItem.findMany({
+                where,
+                skip,
+                take,
+                include: {
+                    category: true,
+                    photos: {
+                        orderBy: { isPrimary: "desc" },
+                    },
+                    modifierGroups: {
+                        include: {
+                            options: true,
+                        },
+                    },
+                },
+                orderBy,
+            }),
+            prisma.menuItem.count({ where }),
+        ]);
+
+        return {
+            items,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    }
 };
 
 /**

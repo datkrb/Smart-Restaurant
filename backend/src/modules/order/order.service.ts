@@ -14,6 +14,7 @@ interface OrderItemInput {
 interface CreateOrderInput {
     tableSessionId: string;
     items: OrderItemInput[];
+    userId?: string;
 }
 
 // Include configuration for order queries
@@ -42,7 +43,7 @@ const orderInclude = {
  * Create a new order or add items to existing order for a table session
  */
 export const createOrder = async (data: CreateOrderInput) => {
-    const { tableSessionId, items } = data;
+    const { tableSessionId, items, userId } = data;
 
     // 1. Check if session is valid and open
     const session = await prisma.tableSession.findUnique({
@@ -68,6 +69,7 @@ export const createOrder = async (data: CreateOrderInput) => {
                     tableSessionId: tableSessionId,
                     status: "RECEIVED",
                     totalAmount: 0,
+                    userId: userId || null,
                 },
             });
 
@@ -109,6 +111,7 @@ export const createOrder = async (data: CreateOrderInput) => {
                     quantity: item.quantity,
                     price: item.price,
                     note: item.note,
+                    status: "RECEIVED", // New items always start as RECEIVED
                 },
             });
 
@@ -131,13 +134,30 @@ export const createOrder = async (data: CreateOrderInput) => {
             orderTotalDelta += (item.price + itemModifiersTotal) * item.quantity;
         }
 
-        // 5. Update order total and get full info
+        // 5. Check if there are any RECEIVED items in the order
+        const hasReceivedItems = await tx.orderItem.findFirst({
+            where: {
+                orderId: order.id,
+                status: "RECEIVED"
+            }
+        });
+
+        // 6. Update order total and status
+        // Set order status to RECEIVED if there are any RECEIVED items
+        // This ensures new items appear in Waiter page even if order was previously READY
+        const updateData: any = {
+            totalAmount: { increment: orderTotalDelta },
+        };
+
+        // If there are RECEIVED items, set order status to RECEIVED
+        // This makes the order appear in Waiter's NEW tab
+        if (hasReceivedItems) {
+            updateData.status = "RECEIVED";
+        }
+
         const updatedOrder = await tx.order.update({
             where: { id: order.id },
-            data: {
-                totalAmount: { increment: orderTotalDelta },
-                status: "RECEIVED",
-            },
+            data: updateData,
             include: orderInclude,
         });
 
@@ -222,6 +242,27 @@ export const getOrderById = async (id: string) => {
  * Update order status
  */
 export const updateOrderStatus = async (id: string, status: OrderStatus) => {
+    // When order becomes READY, update all items to READY as well
+    if (status === 'READY') {
+        await prisma.$transaction(async (tx) => {
+            // Update all items to READY
+            await tx.orderItem.updateMany({
+                where: {
+                    orderId: id,
+                    status: { not: 'CANCELLED' } // Don't update cancelled items
+                },
+                data: { status: 'READY' }
+            });
+
+            // Update order status
+            await tx.order.update({
+                where: { id },
+                data: { status }
+            });
+        });
+    }
+
+    // For other statuses, just update the order
     return await prisma.order.update({
         where: { id },
         data: { status },
