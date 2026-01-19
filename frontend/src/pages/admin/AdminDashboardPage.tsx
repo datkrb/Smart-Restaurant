@@ -9,7 +9,8 @@ import {
     Calendar,
     UserPlus,
     Award,
-    ShieldAlert
+    ShieldAlert,
+    Zap
 } from 'lucide-react';
 import {
     AreaChart,
@@ -22,11 +23,15 @@ import {
 } from 'recharts';
 import { reportApi, DashboardStats, RevenueData, TopSellingItem, UserStats } from '../../api/reportApi';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useSocketStore } from '../../store/useSocketStore';
+import toast from 'react-hot-toast';
 
 const ALLOWED_ROLES = ['SUPER_ADMIN', 'ADMIN'];
 
 const AdminDashboardPage = () => {
     const user = useAuthStore(state => state.user);
+    const socket = useSocketStore(state => state.socket);
+    const joinRoom = useSocketStore(state => state.joinRoom);
 
     // Default: Today
     const [dateRange, setDateRange] = useState({
@@ -39,6 +44,7 @@ const AdminDashboardPage = () => {
     const [topSelling, setTopSelling] = useState<TopSellingItem[]>([]);
     const [userStats, setUserStats] = useState<UserStats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isLive, setIsLive] = useState(false);
 
     const fetchData = async () => {
         // Kiểm tra quyền trước khi fetch
@@ -71,6 +77,38 @@ const AdminDashboardPage = () => {
             setLoading(false);
         }
     };
+
+    // Join admin room for real-time updates
+    useEffect(() => {
+        if (socket?.connected && user && ALLOWED_ROLES.includes(user.role)) {
+            joinRoom({ role: 'ADMIN' });
+            setIsLive(true);
+        }
+    }, [socket, user, joinRoom]);
+
+    // Listen for real-time events
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleNewOrder = (data: any) => {
+            toast.success(`📦 New order from ${data.tableName || 'a table'}!`, { duration: 3000 });
+            // Refresh stats
+            fetchData();
+        };
+
+        const handleOrderComplete = () => {
+            // Refresh stats when order completes (payment received)
+            fetchData();
+        };
+
+        socket.on('new_order', handleNewOrder);
+        socket.on('order_status_change', handleOrderComplete);
+
+        return () => {
+            socket.off('new_order', handleNewOrder);
+            socket.off('order_status_change', handleOrderComplete);
+        };
+    }, [socket, dateRange]);
 
     useEffect(() => {
         fetchData();
@@ -121,9 +159,17 @@ const AdminDashboardPage = () => {
 
             {/* Header & Filters */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                <div>
-                    <h1 className="text-2xl font-black text-gray-800 tracking-tight">Overview</h1>
-                    <p className="text-sm text-gray-500 font-medium">Business statistics</p>
+                <div className="flex items-center gap-3">
+                    <div>
+                        <h1 className="text-2xl font-black text-gray-800 tracking-tight">Overview</h1>
+                        <p className="text-sm text-gray-500 font-medium">Business statistics</p>
+                    </div>
+                    {isLive && (
+                        <span className="flex items-center gap-1.5 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold animate-pulse">
+                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                            LIVE
+                        </span>
+                    )}
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 items-center w-full md:w-auto">
