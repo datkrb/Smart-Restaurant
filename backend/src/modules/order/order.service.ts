@@ -1,4 +1,5 @@
 import { PrismaClient, OrderStatus } from "@prisma/client";
+import * as notificationService from "../notification/notification.service";
 
 const prisma = new PrismaClient();
 
@@ -161,6 +162,22 @@ export const createOrder = async (data: CreateOrderInput) => {
             include: orderInclude,
         });
 
+        // Emit notification for new order
+        const tableData = updatedOrder.tableSession?.table;
+        notificationService.notifyNewOrder({
+            orderId: updatedOrder.id,
+            tableId: tableData?.id || '',
+            tableName: tableData?.name || 'Unknown Table',
+            tableSessionId: tableSessionId,
+            items: updatedOrder.items.map(item => ({
+                id: item.id,
+                name: item.menuItem.name,
+                quantity: item.quantity,
+                status: item.status,
+            })),
+            totalAmount: updatedOrder.totalAmount,
+        });
+
         return updatedOrder;
     });
 
@@ -263,11 +280,52 @@ export const updateOrderStatus = async (id: string, status: OrderStatus) => {
     }
 
     // For other statuses, just update the order
-    return await prisma.order.update({
+    const updatedOrder = await prisma.order.update({
         where: { id },
         data: { status },
         include: orderInclude,
     });
+
+    // Emit notifications based on status
+    const tableSessionId = updatedOrder.tableSessionId;
+    
+    if (status === 'PREPARING') {
+        notificationService.notifyOrderAccepted({
+            orderId: id,
+            tableId: updatedOrder.tableSession?.table?.id || '',
+            tableName: updatedOrder.tableSession?.table?.name || '',
+            tableSessionId,
+            items: updatedOrder.items.map(item => ({
+                id: item.id,
+                name: item.menuItem.name,
+                quantity: item.quantity,
+                status: item.status,
+            })),
+        });
+    } else if (status === 'READY') {
+        notificationService.notifyOrderReady({
+            orderId: id,
+            tableSessionId,
+            items: updatedOrder.items.map(item => ({
+                id: item.id,
+                name: item.menuItem.name,
+                quantity: item.quantity,
+            })),
+        });
+    } else if (status === 'SERVED') {
+        notificationService.notifyOrderServed({
+            orderId: id,
+            tableSessionId,
+        });
+    } else {
+        notificationService.notifyOrderStatusChange({
+            orderId: id,
+            tableSessionId,
+            status,
+        });
+    }
+
+    return updatedOrder;
 };
 
 /**

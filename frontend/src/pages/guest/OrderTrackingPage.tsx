@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useSessionStore } from '../../store/useSessionStore';
+import { useSocketStore } from '../../store/useSocketStore';
 import { guestApi } from '../../api/guestApi';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 interface OrderItem {
     id: string;
@@ -32,6 +34,8 @@ const STEPS = ['RECEIVED', 'PREPARING', 'READY'];
 
 const OrderTrackingPage = () => {
     const { sessionId } = useSessionStore();
+    const socket = useSocketStore(state => state.socket);
+    const joinRoom = useSocketStore(state => state.joinRoom);
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
     const [requestingBill, setRequestingBill] = useState(false);
@@ -48,9 +52,45 @@ const OrderTrackingPage = () => {
         }
     };
 
+    // Join session room for real-time notifications
+    useEffect(() => {
+        if (socket?.connected && sessionId) {
+            joinRoom({ role: 'CUSTOMER', tableSessionId: sessionId });
+        }
+    }, [socket, sessionId, joinRoom]);
+
+    // Socket.IO event listeners
+    useEffect(() => {
+        if (!socket) return;
+
+        // Listen for order ready notification
+        socket.on('order_ready', (data: any) => {
+            toast.success('🍽️ Your order is ready!', { duration: 5000 });
+            fetchOrder(); // Refresh order data
+        });
+
+        // Listen for order served notification
+        socket.on('order_served', (data: any) => {
+            toast.success('✅ Your order has been served!', { duration: 5000 });
+            fetchOrder();
+        });
+
+        // Listen for any status change
+        socket.on('order_status_change', (data: any) => {
+            fetchOrder();
+        });
+
+        return () => {
+            socket.off('order_ready');
+            socket.off('order_served');
+            socket.off('order_status_change');
+        };
+    }, [socket]);
+
     useEffect(() => {
         fetchOrder();
-        const interval = setInterval(fetchOrder, 5000);
+        // Reduce polling frequency since we have real-time updates now
+        const interval = setInterval(fetchOrder, 30000);
         return () => clearInterval(interval);
     }, [sessionId]);
 

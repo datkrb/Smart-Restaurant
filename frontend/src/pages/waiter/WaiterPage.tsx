@@ -45,6 +45,14 @@ export default function WaiterPage() {
   const [billOrder, setBillOrder] = useState<Order | null>(null);
 
   const socket = useSocketStore(state => state.socket);
+  const joinRoom = useSocketStore(state => state.joinRoom);
+
+  // Join waiter room for real-time notifications
+  useEffect(() => {
+    if (socket?.connected) {
+      joinRoom({ role: 'WAITER' });
+    }
+  }, [socket, joinRoom]);
 
   // Initialize selection when orders load
   useEffect(() => {

@@ -8,6 +8,7 @@ import cors from "cors";
 import { json, urlencoded } from "body-parser";
 import { errorHandler } from "./shared/middlewares/errorHandler";
 import router from "./modules/registerRoutes";
+import { initializeNotificationService } from "./modules/notification/notification.service";
 
 const app = express();
 
@@ -22,6 +23,9 @@ const io = new SocketIOServer(server, {
     methods: ["GET", "POST"]
   }
 });
+
+// Initialize notification service with Socket.IO
+initializeNotificationService(io);
 
 // Middleware 
 app.use(cors());
@@ -45,3 +49,4 @@ app.use("/api/v1", router);
 app.use(errorHandler);
 
 export { app, server, io };
+

@@ -100,6 +100,14 @@ export default function KitchenPage() {
   const [loading, setLoading] = useState(false);
   const [lastOrderCount, setLastOrderCount] = useState(0);
   const socket = useSocketStore(state => state.socket);
+  const joinRoom = useSocketStore(state => state.joinRoom);
+
+  // Join kitchen room for real-time notifications
+  useEffect(() => {
+    if (socket?.connected) {
+      joinRoom({ role: 'KITCHEN' });
+    }
+  }, [socket, joinRoom]);
 
   const fetchOrders = async () => {
     try {
@@ -120,6 +128,13 @@ export default function KitchenPage() {
     fetchOrders();
 
     if (socket) {
+      // Listen for order_accepted event (from notification service)
+      socket.on('order_accepted', (data: any) => {
+        playNotificationSound();
+        toast.success(`New order from Table ${data.tableName || 'Unknown'}!`, { icon: '🔥', duration: 5000 });
+        fetchOrders(); // Refresh orders list
+      });
+
       // Khi có thay đổi trạng thái đơn hàng (từ Waiter duyệt hoặc Bếp khác làm xong)
       socket.on('order_status_updated', (updatedOrder: Order) => {
         setOrders(prev => {
@@ -139,12 +154,19 @@ export default function KitchenPage() {
           return prev;
         });
       });
+
+      // Listen for order_ready to remove from list
+      socket.on('order_ready', (data: any) => {
+        setOrders(prev => prev.filter(o => o.id !== data.orderId));
+      });
     }
 
     const interval = setInterval(fetchOrders, 30000);
     return () => {
       clearInterval(interval);
+      socket?.off('order_accepted');
       socket?.off('order_status_updated');
+      socket?.off('order_ready');
     };
   }, [socket]);
 
