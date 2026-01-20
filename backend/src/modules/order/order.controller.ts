@@ -35,12 +35,6 @@ export const updateOrderItems = async (req: Request, res: Response) => {
 
         const updatedOrder = await orderService.updateOrderItems(id, items);
 
-        // Realtime notify
-        const { io } = require("../../app");
-        if (io) {
-            io.emit("order_status_updated", updatedOrder);
-        }
-
         res.json(updatedOrder);
     } catch (error) {
         console.error(error);
@@ -57,12 +51,6 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         const { status } = req.body;
 
         const updatedOrder = await orderService.updateOrderStatus(id, status as OrderStatus);
-
-        // Realtime notify
-        const { io } = require("../../app");
-        if (io) {
-            io.emit("order_status_updated", updatedOrder);
-        }
 
         res.json(updatedOrder);
     } catch (error) {
@@ -136,11 +124,6 @@ export const completeOrder = async (req: Request, res: Response) => {
 
         const result = await orderService.completeOrderAndCloseSession(id);
 
-        // Realtime notify
-        const { io } = require("../../app");
-        if (io) {
-            io.emit("order_completed", { orderId: id });
-        }
 
         res.json(result);
     } catch (error: any) {

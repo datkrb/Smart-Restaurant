@@ -38,6 +38,11 @@ export const tableApi = {
         return axiosClient.post<{ message: string; data: any }>("/tables/regenerate-all-qr")
     },
 
+    // 6.1 Get ALL QR Images (Base64)
+    getAllQRImages: () => {
+        return axiosClient.get<{ data: { id: string, name: string, capacity: number, qrDataUrl: string }[] }>("/tables/qrs/all")
+    },
+
     // 7. Delete Table
     // Response: { message: string }
     deleteTable: (id: string) => {

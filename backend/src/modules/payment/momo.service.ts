@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import axios from 'axios';
 import { PrismaClient, PaymentMethod, PaymentStatus } from '@prisma/client';
+import * as notificationService from '../notification/notification.service';
 
 const prisma = new PrismaClient();
 
@@ -167,6 +168,13 @@ export async function processMoMoSuccess(data: MoMoIPNData): Promise<boolean> {
       data: { status: 'CLOSED', endedAt: new Date() },
     });
   }
+
+  // Notify real-time update
+  notificationService.notifyOrderStatusChange({
+    orderId: realOrderId,
+    tableSessionId: order.tableSessionId || '',
+    status: 'COMPLETED'
+  });
 
   console.log(`✅ MoMo Payment Completed: ${realOrderId}`);
   return true;

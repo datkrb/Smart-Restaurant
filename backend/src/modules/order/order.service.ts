@@ -342,7 +342,7 @@ export const getOrderByTableSession = async (tableSessionId: string) => {
  * Update status of multiple items in an order
  */
 export const updateOrderItems = async (orderId: string, itemStatuses: { itemId: string, status: OrderStatus }[]) => {
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
         // 1. Update each item
         for (const { itemId, status } of itemStatuses) {
             await tx.orderItem.update({
@@ -413,6 +413,20 @@ export const updateOrderItems = async (orderId: string, itemStatuses: { itemId: 
         // 6. Return result
         return updatedOrder;
     });
+
+    // 7. Notify changes
+    if (result) {
+        notificationService.notifyOrderStatusChange({
+            orderId: result.id,
+            tableSessionId: result.tableSessionId,
+            status: result.status,
+            items: result.items
+        });
+
+        // Also notify kitchen explicitly if needed, but OrderStatusChange covers it
+    }
+
+    return result;
 };
 
 /**
@@ -444,6 +458,13 @@ export const completeOrderAndCloseSession = async (orderId: string) => {
                 }
             });
         }
+
+        // 4. Notify real-time update
+        notificationService.notifyOrderStatusChange({
+            orderId: order.id,
+            tableSessionId: order.tableSessionId || '',
+            status: "COMPLETED"
+        });
 
         return { success: true, message: "Order completed and session closed" };
     });

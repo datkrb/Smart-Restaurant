@@ -5,6 +5,7 @@ import { guestApi } from '../../api/guestApi';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import MoMoPaymentModal from '../../components/payment/MoMoPaymentModal';
+import StripePaymentModal from '../../components/payment/StripePaymentModal';
 
 interface OrderItem {
     id: string;
@@ -41,6 +42,7 @@ const OrderTrackingPage = () => {
     const [loading, setLoading] = useState(true);
     const [requestingBill, setRequestingBill] = useState(false);
     const [showMoMoModal, setShowMoMoModal] = useState(false);
+    const [showStripeModal, setShowStripeModal] = useState(false);
 
     const fetchOrder = async () => {
         if (!sessionId) return;
@@ -56,10 +58,12 @@ const OrderTrackingPage = () => {
 
     // Join session room for real-time notifications
     useEffect(() => {
+        console.log(`🔌 Socket Effect Triggered. Connected: ${socket?.connected}, SessionId: ${sessionId}`);
         if (socket?.connected && sessionId) {
+            console.log(`🔌 Attempting to join room: session_${sessionId}`);
             joinRoom({ role: 'CUSTOMER', tableSessionId: sessionId });
         }
-    }, [socket, sessionId, joinRoom]);
+    }, [socket, sessionId, joinRoom, socket?.connected]);
 
     // Socket.IO event listeners
     useEffect(() => {
@@ -79,10 +83,12 @@ const OrderTrackingPage = () => {
 
         // Listen for any status change
         socket.on('order_status_change', (data: any) => {
+            console.log('📢 Frontend Recieved: order_status_change', data);
             fetchOrder();
         });
 
         return () => {
+            console.log('🔌 Cleaning up socket listeners');
             socket.off('order_ready');
             socket.off('order_served');
             socket.off('order_status_change');
@@ -240,12 +246,20 @@ const OrderTrackingPage = () => {
                         ✓ Payment Completed
                     </div>
                 ) : order.billRequested ? (
+                    <>
                     <button
                         onClick={() => setShowMoMoModal(true)}
                         className="flex-[2] py-3 bg-gradient-to-r from-pink-500 to-pink-600 text-white font-bold rounded-xl flex items-center justify-center shadow-lg shadow-pink-200 hover:from-pink-600 hover:to-pink-700 active:scale-95 transition-all"
                     >
                         💳 Pay with MoMo
                     </button>
+                    <button
+                        onClick={() => toast.success("Please pay cash to the waiter")}
+                        className="flex-[2] py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-xl flex items-center justify-center shadow-lg shadow-green-200 hover:from-green-600 hover:to-green-700 active:scale-95 transition-all"
+                    >
+                        💵 Pay Cash
+                    </button>
+                    </>
                 ) : (
                     <button
                         onClick={handleRequestBill}
@@ -272,6 +286,19 @@ const OrderTrackingPage = () => {
                         setShowMoMoModal(false);
                         fetchOrder();
                         toast.success('Thanh toán thành công!');
+                    }}
+                />
+            )}
+
+            {/* Stripe Payment Modal */}
+            {showStripeModal && order && (
+                <StripePaymentModal
+                    orderId={order.id}
+                    amount={order.totalAmount}
+                    onClose={() => setShowStripeModal(false)}
+                    onSuccess={() => {
+                        setShowStripeModal(false);
+                        fetchOrder();
                     }}
                 />
             )}

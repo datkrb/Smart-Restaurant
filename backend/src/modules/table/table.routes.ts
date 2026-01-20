@@ -28,6 +28,13 @@ router.post(
   tableController.regenerateAllQRs
 );
 
+// 4.1. Get ALL QR Images as Base64 (Admin Only)
+router.get(
+  "/qrs/all",
+  roleGuard([Role.ADMIN, Role.SUPER_ADMIN]),
+  tableController.getAllQRImages
+);
+
 // 5. Verify QR Token (Public - for guest validation)
 router.post("/verify-qr", tableController.verifyQRToken);
 

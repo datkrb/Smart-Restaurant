@@ -151,85 +151,52 @@ export default function AdminTablePage() {
 
     setLoading(true);
     try {
-      const doc = new jsPDF();
-      let processed = 0;
-
-      for (let i = 0; i < tables.length; i++) {
-        const table = tables[i];
-        
-        // Create an off-screen container for the QR
-        // We'll trust the QR URL generation logic is consistent
-        const qrUrl = table.qrCodeUrl || `${frontendUrl}/?tableId=${table.id}`;
-        
-        // We need to generate the QR SVG string manually if we don't render it.
-        // Or cleaner: Render a QRCodeSVG into a temporary div, then serialize it.
-        // Since we can't easily "render" React components to DOM synchronously without mounting,
-        // we might need to rely on the fact they are already rendered in the grid?
-        // Or we use a library/helper.
-        // But `qrcode.react` renders to DOM.
-        
-        // Alternative: Use `QRCodeSVG` from `qrcode.react` to generate string? 
-        // No, it's a component.
-        // Let's rely on the existing DOM elements if they exist (they are rendered in the grid!).
-        // The grid renders ALL tables? usually yes unless paginated. The current page fetches all tables.
-        // So we can find the SVG by ID or context?
-        // The current list renders `QRCodeSVG` without IDs.
-        // Let's add IDs to the rendered QR codes in the list so we can grab them!
-        
-        // WAIT: The user might have scrolled and virtualization might unload them?
-        // This page seems to render a simple list map, no virtual scroller visible in imports.
-        // So they should be in DOM.
-        
-        // Let's assume we can grab them from DOM if we give them IDs.
-        // I will add `id={`qr-table-${table.id}`}` to the list rendering.
-        
-        const svg = document.getElementById(`qr-table-${table.id}`);
-        if (svg) {
-            if (i > 0) doc.addPage();
-            
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const svgData = new XMLSerializer().serializeToString(svg);
-            const img = new Image();
-            
-            // Wait for image load
-            await new Promise<void>((resolve) => {
-                img.onload = () => {
-                    canvas.width = 1000;
-                    canvas.height = 1000;
-                    ctx?.drawImage(img, 0, 0, 1000, 1000);
-                    const imgData = canvas.toDataURL('image/png');
-                    
-                    const width = doc.internal.pageSize.getWidth();
-                    const height = doc.internal.pageSize.getHeight();
-
-                    doc.setFontSize(24);
-                    doc.text(table.name, width / 2, 40, { align: 'center' });
-                    
-                    doc.setFontSize(14);
-                    doc.setTextColor(100);
-                    doc.text(`Capacity: ${table.capacity}`, width / 2, 50, { align: 'center' }); // Added capacity info
-
-                    const qrSize = 100;
-                    doc.addImage(imgData, 'PNG', (width - qrSize) / 2, 60, qrSize, qrSize);
-                    
-                    doc.setFontSize(10);
-                    doc.setTextColor(150);
-                    doc.text("Scan to order", width / 2, height - 20, { align: 'center' });
-                    
-                    resolve();
-                };
-                img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
-            });
-        }
-      }
+      // Fetch pre-generated QR images from backend
+      const res = await tableApi.getAllQRImages();
+      console.log('DEBUG: getAllQRImages response:', res);
       
+      const qrData = (res as any).data?.data || (res as any).data || [];
+      console.log('DEBUG: Parsed qrData:', qrData);
+
+      if (!qrData || qrData.length === 0) {
+        console.error('DEBUG: No QR data found. key check:', Object.keys(res));
+        throw new Error("No QR data received from server");
+      }
+
+      const doc = new jsPDF();
+      const width = doc.internal.pageSize.getWidth();
+      const height = doc.internal.pageSize.getHeight();
+
+      qrData.forEach((item: any, index: number) => {
+        if (index > 0) doc.addPage();
+
+        // Title: Table Name
+        doc.setFontSize(24);
+        doc.text(item.name, width / 2, 40, { align: 'center' });
+
+        // Subtitle: Capacity
+        doc.setFontSize(14);
+        doc.setTextColor(100);
+        doc.text(`Capacity: ${item.capacity}`, width / 2, 50, { align: 'center' });
+
+        // QR Image from Data URL
+        if (item.qrDataUrl) {
+          const qrSize = 100;
+          doc.addImage(item.qrDataUrl, 'PNG', (width - qrSize) / 2, 60, qrSize, qrSize);
+        }
+
+        // Footer
+        doc.setFontSize(10);
+        doc.setTextColor(150);
+        doc.text("Scan to order", width / 2, height - 20, { align: 'center' });
+      });
+
       doc.save("All_Tables_QR.pdf");
       ui.alertSuccess("PDF Downloaded successfully");
 
-    } catch (error) {
-      console.error("PDF Gen Error", error);
-      ui.alertError("Failed to generate PDF");
+    } catch (error: any) {
+      console.error("PDF Gen Error Full:", error);
+      ui.alertError(`Failed to generate PDF: ${error.message}`);
     } finally {
       setLoading(false);
     }

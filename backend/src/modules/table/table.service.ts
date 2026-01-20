@@ -189,3 +189,40 @@ export const regenerateAllQRCodes = async () => {
     };
 };
 
+// 9. Get ALL QR Images as Base64
+export const getAllTableQRImages = async () => {
+    console.log('DEBUG: Starting getAllTableQRImages');
+    const tables = await prisma.table.findMany({
+        orderBy: { name: 'asc' }
+    });
+    console.log(`DEBUG: Found ${tables.length} tables`);
+
+    const results = await Promise.all(
+        tables.map(async (table) => {
+            try {
+                const url = generateTableQRUrl(table);
+                const qrDataUrl = await QRCode.toDataURL(url, {
+                    errorCorrectionLevel: 'H',
+                    width: 400,
+                    margin: 2
+                });
+                return {
+                    id: table.id,
+                    name: table.name,
+                    capacity: table.capacity,
+                    qrDataUrl
+                };
+            } catch (error) {
+                console.error(`Failed to generate QR for table ${table.id}`, error);
+                return null;
+            }
+        })
+    );
+
+
+
+    const finalResults = results.filter(item => item !== null);
+    console.log(`DEBUG: Generated ${finalResults.length} QR images`);
+    return finalResults;
+};
+

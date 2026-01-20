@@ -87,6 +87,16 @@ export const regenerateAllQRs = async (req: Request, res: Response) => {
   }
 };
 
+// Get ALL QR Images
+export const getAllQRImages = async (req: Request, res: Response) => {
+  try {
+    const qrImages = await tableService.getAllTableQRImages();
+    res.json({ data: qrImages });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Verify QR Token
 export const verifyQRToken = async (req: Request, res: Response) => {
   try {

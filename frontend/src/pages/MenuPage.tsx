@@ -144,7 +144,7 @@ export default function MenuPage() {
       <Header />
 
       {/* HEADER STICKY */}
-      <header className="bg-white shadow-sm sticky top-[60px] z-20">
+      <header className="bg-white shadow-sm sticky top-[65px] z-20">
         {/* Top Bar: Brand & Search */}
         <div className="p-4 pb-2 space-y-3">
           <div className="flex justify-between items-center">
