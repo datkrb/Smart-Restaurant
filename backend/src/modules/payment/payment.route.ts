@@ -5,13 +5,15 @@ import { Role } from '@prisma/client';
 
 const router = Router();
 
-// Guest tạo yêu cầu thanh toán
+// Stripe
 router.post('/create-intent', paymentController.createPaymentIntent);
 
-// Admin/Waiter xác nhận tiền mặt
-router.post('/confirm-cash', authMiddleware, roleGuard([Role.ADMIN, Role.WAITER]), paymentController.confirmCashPayment);
+// Cash/Manual confirmation
+router.post('/confirm-cash', authMiddleware, roleGuard([Role.ADMIN, Role.WAITER, Role.SUPER_ADMIN]), paymentController.confirmCashPayment);
 
-// Webhook (Đã đăng ký riêng ở app.ts nhưng để đây cho nhớ)
-// router.post('/webhook', ...); 
+// MoMo
+router.post('/momo/create', paymentController.createMoMoPayment);
+router.post('/momo/ipn', paymentController.momoIPN);
+router.get('/momo/status/:orderId', paymentController.checkMoMoStatus);
 
 export default router;

@@ -26,6 +26,8 @@ services:
       - /app/node_modules
     ports:
       - "4000:4000"
+    env_file:
+      - ./backend/.env
     environment:
       - DATABASE_URL=postgresql://user:password@postgres:5432/restaurant
       - REDIS_URL=redis://redis:6379
@@ -44,12 +46,16 @@ services:
       - redis
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     volumes:
       - ./frontend:/app
       - /app/node_modules
     ports:
-      - "3000:80"
+      - "3000:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:4000/api/v1
     depends_on:
       - backend
 

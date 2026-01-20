@@ -80,38 +80,43 @@ passport.deserializeUser(async (id: string, done) => {
   }
 });
 
-passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID || '',
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    callbackURL: "/api/v1/auth/google/callback"
-  },
-  async (accessToken, refreshToken, profile, done) => {
-    try {
-      const email = profile.emails?.[0].value;
-      if (!email) return done(null, false);
+// Google OAuth Strategy (only if credentials are configured)
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  passport.use(new GoogleStrategy({
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: "/api/v1/auth/google/callback"
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        const email = profile.emails?.[0].value;
+        if (!email) return done(null, false);
 
-      // 1. Kiểm tra xem user có tồn tại chưa
-      let user = await prisma.user.findUnique({ where: { email } });
+        // 1. Kiểm tra xem user có tồn tại chưa
+        let user = await prisma.user.findUnique({ where: { email } });
 
-      // 2. Nếu chưa có -> Tự động đăng ký
-      if (!user) {
-        user = await prisma.user.create({
-          data: {
-            email,
-            fullName: profile.displayName,
-            password: "", // Không có pass
-            role: "CUSTOMER",
-            isVerified: true, // Google đã verify email rồi
-            avatarUrl: profile.photos?.[0].value
-          }
-        });
+        // 2. Nếu chưa có -> Tự động đăng ký
+        if (!user) {
+          user = await prisma.user.create({
+            data: {
+              email,
+              fullName: profile.displayName,
+              password: "", // Không có pass
+              role: "CUSTOMER",
+              isVerified: true, // Google đã verify email rồi
+              avatarUrl: profile.photos?.[0].value
+            }
+          });
+        }
+
+        return done(null, user);
+      } catch (error) {
+        return done(error, false);
       }
-
-      return done(null, user);
-    } catch (error) {
-      return done(error, false);
     }
-  }
-));
+  ));
+} else {
+  console.log('⚠️ Google OAuth disabled: GOOGLE_CLIENT_ID/SECRET not configured');
+}
 
 export default passport;

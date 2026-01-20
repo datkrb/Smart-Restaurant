@@ -1,0 +1,12 @@
+{
+  "name": "ngrok-tunnel",
+  "version": "1.0.0",
+  "description": "Ngrok tunnel for MoMo webhook",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@ngrok/ngrok": "^1.7.0"
+  }
+}

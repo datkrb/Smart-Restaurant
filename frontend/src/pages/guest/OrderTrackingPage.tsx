@@ -4,6 +4,7 @@ import { useSocketStore } from '../../store/useSocketStore';
 import { guestApi } from '../../api/guestApi';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import MoMoPaymentModal from '../../components/payment/MoMoPaymentModal';
 
 interface OrderItem {
     id: string;
@@ -39,6 +40,7 @@ const OrderTrackingPage = () => {
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
     const [requestingBill, setRequestingBill] = useState(false);
+    const [showMoMoModal, setShowMoMoModal] = useState(false);
 
     const fetchOrder = async () => {
         if (!sessionId) return;
@@ -233,17 +235,21 @@ const OrderTrackingPage = () => {
                     New Order
                 </Link>
 
-                {order.billRequested ? (
+                {order.status === 'COMPLETED' ? (
+                    <div className="flex-[2] py-3 bg-green-100 text-green-700 font-bold rounded-xl flex items-center justify-center border border-green-200">
+                        ✓ Payment Completed
+                    </div>
+                ) : order.billRequested ? (
                     <button
-                        disabled
-                        className="flex-[2] py-3 bg-yellow-100 text-yellow-700 font-bold rounded-xl flex items-center justify-center cursor-not-allowed border border-yellow-200"
+                        onClick={() => setShowMoMoModal(true)}
+                        className="flex-[2] py-3 bg-gradient-to-r from-pink-500 to-pink-600 text-white font-bold rounded-xl flex items-center justify-center shadow-lg shadow-pink-200 hover:from-pink-600 hover:to-pink-700 active:scale-95 transition-all"
                     >
-                        Wait for Bill...
+                        💳 Pay with MoMo
                     </button>
                 ) : (
                     <button
                         onClick={handleRequestBill}
-                        disabled={requestingBill || order.status === 'COMPLETED'}
+                        disabled={requestingBill}
                         className={`flex-[2] py-3 font-bold rounded-xl flex items-center justify-center text-white shadow-lg shadow-green-200 transition-all 
                             ${requestingBill
                                 ? 'bg-gray-400'
@@ -255,6 +261,20 @@ const OrderTrackingPage = () => {
                     </button>
                 )}
             </div>
+
+            {/* MoMo Payment Modal */}
+            {showMoMoModal && order && (
+                <MoMoPaymentModal
+                    orderId={order.id}
+                    amount={order.totalAmount}
+                    onClose={() => setShowMoMoModal(false)}
+                    onSuccess={() => {
+                        setShowMoMoModal(false);
+                        fetchOrder();
+                        toast.success('Thanh toán thành công!');
+                    }}
+                />
+            )}
         </div>
     );
 };

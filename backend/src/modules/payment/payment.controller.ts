@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as paymentService from './payment.service';
+import * as momoService from './momo.service';
 import { PaymentMethod } from '@prisma/client';
 import Stripe from 'stripe';
 
@@ -77,4 +78,56 @@ export const stripeWebhook = async (req: Request, res: Response) => {
   }
 
   res.json({ received: true });
+};
+
+// ==================== MOMO PAYMENT ====================
+
+export const createMoMoPayment = async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.body;
+    if (!orderId) return res.status(400).json({ error: 'orderId is required' });
+
+    const result = await momoService.createMoMoPayment(orderId);
+    res.json({
+      success: true,
+      payUrl: result.payUrl,
+      qrCodeUrl: result.qrCodeUrl,
+      deeplink: result.deeplink,
+      orderId: result.orderId,
+    });
+  } catch (error: any) {
+    console.error('MoMo Create Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to create MoMo payment' });
+  }
+};
+
+export const momoIPN = async (req: Request, res: Response) => {
+  try {
+    const data = req.body;
+    console.log('📥 MoMo IPN:', JSON.stringify(data, null, 2));
+
+    if (!momoService.verifyMoMoIPN(data)) {
+      return res.status(400).json({ message: 'Invalid signature' });
+    }
+
+    if (data.resultCode === 0) {
+      await momoService.processMoMoSuccess(data);
+    }
+
+    res.status(204).send();
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const checkMoMoStatus = async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.params;
+    if (!orderId) return res.status(400).json({ error: 'orderId is required' });
+
+    const result = await momoService.checkMoMoPaymentStatus(orderId);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 };
