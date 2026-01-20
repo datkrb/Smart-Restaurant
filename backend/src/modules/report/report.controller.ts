@@ -47,7 +47,8 @@ export const getRevenueByDate = async (req: Request, res: Response) => {
 
 export const getTopSellingItems = async (req: Request, res: Response) => {
   try {
-    const data = await reportService.getTopSellingItems();
+    const { start, end } = getDateRange(req);
+    const data = await reportService.getTopSellingItems(start, end);
     res.json(data);
   } catch (error) {
     console.error(error);
@@ -59,6 +60,28 @@ export const getUserStats = async (req: Request, res: Response) => {
     try {
         const { start, end } = getDateRange(req);
         const data = await reportService.getUserStats(start, end);
+        res.json(data);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+export const getCategoryStats = async (req: Request, res: Response) => {
+    try {
+        const { start, end } = getDateRange(req);
+        const data = await reportService.getCategoryStats(start, end);
+        res.json(data);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+export const getPaymentStats = async (req: Request, res: Response) => {
+    try {
+        const { start, end } = getDateRange(req);
+        const data = await reportService.getPaymentStats(start, end);
         res.json(data);
     } catch (error) {
         console.error(error);

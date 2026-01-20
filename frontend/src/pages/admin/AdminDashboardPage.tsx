@@ -19,7 +19,11 @@ import {
     YAxis,
     CartesianGrid,
     Tooltip,
-    ResponsiveContainer
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell,
+    Legend
 } from 'recharts';
 import { reportApi, DashboardStats, RevenueData, TopSellingItem, UserStats } from '../../api/reportApi';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -33,16 +37,34 @@ const AdminDashboardPage = () => {
     const socket = useSocketStore(state => state.socket);
     const joinRoom = useSocketStore(state => state.joinRoom);
 
-    // Default: Today
-    const [dateRange, setDateRange] = useState({
-        start: new Date(new Date().setHours(0, 0, 0, 0)).toISOString().slice(0, 16),
-        end: new Date(new Date().setHours(23, 59, 59, 999)).toISOString().slice(0, 16)
+    const toLocalISOString = (date: Date) => {
+        const pad = (num: number) => num.toString().padStart(2, '0');
+        const year = date.getFullYear();
+        const month = pad(date.getMonth() + 1);
+        const day = pad(date.getDate());
+        const hours = pad(date.getHours());
+        const minutes = pad(date.getMinutes());
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+
+    // Default: Today (Local Time)
+    const [dateRange, setDateRange] = useState(() => {
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        const end = new Date();
+        end.setHours(23, 59, 59, 999);
+        return {
+            start: toLocalISOString(start),
+            end: toLocalISOString(end)
+        };
     });
 
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
     const [topSelling, setTopSelling] = useState<TopSellingItem[]>([]);
     const [userStats, setUserStats] = useState<UserStats | null>(null);
+    const [categoryData, setCategoryData] = useState<any[]>([]);
+    const [paymentData, setPaymentData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isLive, setIsLive] = useState(false);
 
@@ -56,20 +78,25 @@ const AdminDashboardPage = () => {
         setLoading(true);
         try {
             const { start, end } = dateRange;
+            // Convert Local Input String to UTC ISO for Backend
             const isoStart = new Date(start).toISOString();
             const isoEnd = new Date(end).toISOString();
 
-            const [statsRes, revenueRes, topRes, userRes] = await Promise.all([
+            const [statsRes, revenueRes, topRes, userRes, catRes, payRes] = await Promise.all([
                 reportApi.getDashboardStats(isoStart, isoEnd),
                 reportApi.getRevenueByDate(isoStart, isoEnd),
-                reportApi.getTopSellingItems(), // Top items usually global or we can add params later
-                reportApi.getUserStats(isoStart, isoEnd)
+                reportApi.getTopSellingItems(isoStart, isoEnd),
+                reportApi.getUserStats(isoStart, isoEnd),
+                reportApi.getCategoryStats(isoStart, isoEnd),
+                reportApi.getPaymentStats(isoStart, isoEnd)
             ]);
 
             setStats(statsRes);
             setRevenueData(revenueRes);
             setTopSelling(topRes);
             setUserStats(userRes);
+            setCategoryData(catRes);
+            setPaymentData(payRes);
 
         } catch (error) {
             console.error("Failed to fetch dashboard data", error);
@@ -116,27 +143,29 @@ const AdminDashboardPage = () => {
 
     const setQuickFilter = (type: '1h' | 'today' | '7d' | '30d') => {
         const now = new Date();
-        const end = now.toISOString().slice(0, 16);
-        let start = new Date().toISOString().slice(0, 16);
+        const endStr = toLocalISOString(now);
+        let start = new Date();
 
         if (type === '1h') {
-            const d = new Date();
-            d.setHours(d.getHours() - 1);
-            start = d.toISOString().slice(0, 16);
+            start.setHours(start.getHours() - 1);
         } else if (type === 'today') {
-            const d = new Date();
-            d.setHours(0, 0, 0, 0);
-            start = d.toISOString().slice(0, 16);
+            start.setHours(0, 0, 0, 0);
+            // End of today (not just 'now')? 
+            // Usually 'Today' implies 00:00 to 23:59.
+            // If I set End to 'now', I miss future orders if I don't refresh?
+            // But if I filter by 'Today', I usually want 'Whole Day'.
+            // Let's set End to 23:59:59 for 'today'.
+            const e = new Date();
+            e.setHours(23, 59, 59, 999);
+            setDateRange({ start: toLocalISOString(start), end: toLocalISOString(e) });
+            return;
         } else if (type === '7d') {
-            const d = new Date();
-            d.setDate(d.getDate() - 7);
-            start = d.toISOString().slice(0, 16);
+            start.setDate(start.getDate() - 7);
         } else if (type === '30d') {
-            const d = new Date();
-            d.setDate(d.getDate() - 30);
-            start = d.toISOString().slice(0, 16);
+            start.setDate(start.getDate() - 30);
         }
-        setDateRange({ start, end });
+        
+        setDateRange({ start: toLocalISOString(start), end: endStr });
     };
 
     const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
@@ -153,6 +182,8 @@ const AdminDashboardPage = () => {
             </div>
         );
     }
+
+    const COLORS = ['#ea580c', '#fb923c', '#fdba74', '#fed7aa', '#ffedd5', '#f3f4f6'];
 
     return (
         <div className="flex flex-col gap-8 pb-10">
@@ -256,7 +287,6 @@ const AdminDashboardPage = () => {
                                             tickLine={false}
                                             tick={{ fontSize: 12, fill: '#9ca3af' }}
                                             tickFormatter={(str) => {
-                                                // Make axis smarter? If hourly, show HH:mm, if daily show DD/MM
                                                 if (str.includes(':')) return str;
                                                 const date = new Date(str);
                                                 return `${date.getDate()}/${date.getMonth() + 1}`;
@@ -317,7 +347,71 @@ const AdminDashboardPage = () => {
                                 ))}
                             </div>
                         </div>
+                    </div>
 
+                    {/* New Charts Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Category Sales Chart */}
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                            <h3 className="text-lg font-bold text-gray-800 mb-6">Sales by Category</h3>
+                            <div className="h-64 w-full flex items-center justify-center">
+                                {categoryData.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={categoryData}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={60}
+                                                outerRadius={80}
+                                                fill="#8884d8"
+                                                paddingAngle={5}
+                                                dataKey="value"
+                                            >
+                                                {categoryData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip formatter={(val: number) => formatCurrency(val)} />
+                                            <Legend verticalAlign="bottom" height={36} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <p className="text-gray-400 text-sm">No category data</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Payment Method Chart */}
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                            <h3 className="text-lg font-bold text-gray-800 mb-6">Payment Methods</h3>
+                            <div className="h-64 w-full flex items-center justify-center">
+                                {paymentData.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={paymentData}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={60}
+                                                outerRadius={80}
+                                                fill="#8884d8"
+                                                paddingAngle={5}
+                                                dataKey="value"
+                                            >
+                                                {paymentData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1'][index % 5]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip formatter={(val: number) => formatCurrency(val)} />
+                                            <Legend verticalAlign="bottom" height={36} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <p className="text-gray-400 text-sm">No payment data</p>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </>
             )}

@@ -13,9 +13,9 @@ RUN npm install
 COPY . .
 
 # LỆNH QUAN TRỌNG: Tạo ra engine tương ứng với Linux trong container
-RUN npx prisma generate
+# RUN npx prisma generate
 
-RUN npm run build
+# RUN npm run build
 
 EXPOSE 4000
 CMD ["npm", "run", "dev"]

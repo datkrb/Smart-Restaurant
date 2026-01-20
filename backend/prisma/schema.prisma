@@ -147,6 +147,7 @@ model MenuItem {
   name                 String
   description          String?
   price                Float
+  prepTime             Int     @default(15) // Preparation time in minutes
   status               MenuItemStatus @default(AVAILABLE)
   isChefRecommended    Boolean @default(false)
   createdAt            DateTime @default(now())

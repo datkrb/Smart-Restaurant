@@ -8,9 +8,9 @@ export const createUser = async (req: Request, res: Response) => {
     // const currentUser = req.user?.role;
     const currentUser = (req.user as any)?.role;
     if (currentUser === Role.ADMIN) {
-      if (role == Role.ADMIN || role == Role.SUPER_ADMIN) {
+      if (role == Role.SUPER_ADMIN) {
         return res.status(403).json({
-          message: "You can only create Waiter, Kitchen and Customer",
+          message: "You cannot create SUPER_ADMIN",
         });
         return;
       }

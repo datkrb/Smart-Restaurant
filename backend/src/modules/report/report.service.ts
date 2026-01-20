@@ -74,28 +74,40 @@ export const getRevenueByDate = async (startDate: Date, endDate: Date) => {
 };
 
 // 3. Món bán chạy nhất (Top Selling)
-export const getTopSellingItems = async () => {
-    // Ideally adding date range support here too, but for simplicity keeping it all-time or could update later
-  const topItems = await prisma.orderItem.groupBy({
-    by: ['menuItemId'],
-    _sum: { quantity: true },
-    orderBy: {
-      _sum: { quantity: 'desc' }
-    },
-    take: 5
-  });
+export const getTopSellingItems = async (startDate?: Date, endDate?: Date) => {
+    const start = startDate || new Date(new Date().setHours(0,0,0,0));
+    const end = endDate || new Date(new Date().setHours(23,59,59,999));
 
-  const result = await Promise.all(topItems.map(async (item) => {
-    const menuInfo = await prisma.menuItem.findUnique({
-      where: { id: item.menuItemId }
+    // Filter orders first to get relevant IDs... OR filter on OrderItem via Order relation
+    // Prisma grouping doesn't support deep relation filtering easily in `groupBy`.
+    // Easier approach: Find many OrderItems where order.createdAt is in range.
+    
+    const topItems = await prisma.orderItem.groupBy({
+        by: ['menuItemId'],
+        _sum: { quantity: true },
+        where: {
+            order: {
+                createdAt: { gte: start, lte: end },
+                status: OrderStatus.COMPLETED
+            }
+        },
+        orderBy: {
+            _sum: { quantity: 'desc' }
+        },
+        take: 5
     });
-    return {
-      name: menuInfo?.name || 'Unknown',
-      quantity: item._sum.quantity
-    };
-  }));
 
-  return result;
+    const result = await Promise.all(topItems.map(async (item) => {
+        const menuInfo = await prisma.menuItem.findUnique({
+            where: { id: item.menuItemId }
+        });
+        return {
+            name: menuInfo?.name || 'Unknown',
+            quantity: item._sum.quantity
+        };
+    }));
+
+    return result;
 };
 
 // 4. Thống kê User
@@ -142,3 +154,78 @@ export const getUserStats = async (startDate: Date, endDate: Date) => {
         topSpenders: spendingRanking.filter(u => u !== null)
     };
 }
+
+// 5. Thống kê theo danh mục (Pie Chart)
+export const getCategoryStats = async (startDate: Date, endDate: Date) => {
+    // We need to sum (quantity * price) per category.
+    // Prisma group by Category is hard because OrderItem -> MenuItem -> Category.
+    // We can fetch all OrderItems in range, then aggregate in JS (easiest for small-medium scale)
+    // Or doing a raw query. Let's do raw query for performance/cleanliness if possible, but strict typing is annoying.
+    // Let's stick to fetch + map for now, assuming not millions of rows per day yet.
+    
+    // Better: Group by MenuItem first (we already have that potentially), then map to category.
+    const itemSales = await prisma.orderItem.groupBy({
+        by: ['menuItemId'],
+        _sum: { quantity: true }, // We need revenue, but price might change? 
+        // OrderItem stores "price" at time of purchase.
+        // We can't sum(price * quantity) directly in Prisma groupBy easily without raw query.
+        
+        where: {
+            order: {
+                createdAt: { gte: startDate, lte: endDate },
+                status: OrderStatus.COMPLETED
+            }
+        }
+    });
+
+    // To get revenue, efficiently, we need to iterate.
+    // Let's use `findMany` with select to get data for manual aggregation.
+    const items = await prisma.orderItem.findMany({
+        where: {
+            order: {
+                createdAt: { gte: startDate, lte: endDate },
+                status: OrderStatus.COMPLETED
+            }
+        },
+        select: {
+            quantity: true,
+            price: true,
+            menuItem: {
+                select: {
+                    category: { select: { name: true } }
+                }
+            }
+        }
+    });
+
+    const categoryMap: Record<string, number> = {};
+    items.forEach(item => {
+        const catName = item.menuItem.category.name;
+        const total = item.quantity * item.price;
+        categoryMap[catName] = (categoryMap[catName] || 0) + total;
+    });
+
+    return Object.keys(categoryMap).map(key => ({
+        name: key,
+        value: categoryMap[key]
+    }));
+};
+
+// 6. Thống kê phương thức thanh toán
+export const getPaymentStats = async (startDate: Date, endDate: Date) => {
+    const payments = await prisma.payment.groupBy({
+        by: ['method'],
+        _sum: { amount: true },
+        where: {
+            status: 'PAID', // Assuming we only count successful payments
+            order: {
+                createdAt: { gte: startDate, lte: endDate } // Or payment.paidAt
+            }
+        }
+    });
+
+    return payments.map(p => ({
+        name: p.method,
+        value: p._sum.amount || 0
+    }));
+};

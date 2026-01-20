@@ -17,4 +17,10 @@ router.get('/top-selling', reportController.getTopSellingItems);
 // User Stats
 router.get('/user-stats', reportController.getUserStats);
 
+// Category Stats
+router.get('/category-stats', reportController.getCategoryStats);
+
+// Payment Stats
+router.get('/payment-stats', reportController.getPaymentStats);
+
 export default router;

@@ -1,8 +1,6 @@
 // src/server.ts
-import dotenv from "dotenv";
+import "dotenv/config";
 import { server } from "./app"; // IMPORT SERVER TỪ APP.TS ĐỂ CÓ ROUTE VÀ SOCKET.IO
-
-dotenv.config();
 
 const PORT = process.env.PORT || 4000;
 

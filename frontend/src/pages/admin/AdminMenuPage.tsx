@@ -154,7 +154,8 @@ export default function AdminMenuPage() {
       description: item.description || '',
       categoryId: item.categoryId,
       isChefRecommended: item.isChefRecommended,
-      status: item.status
+      status: item.status,
+      prepTime: item.prepTime
     });
     setIsEditModalOpen(true);
   }
@@ -415,6 +416,16 @@ export default function AdminMenuPage() {
                   </div>
 
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Prep Time (mins)</label>
+                     <input
+                      type="number"
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                      value={editFormData.prepTime || 0}
+                      onChange={e => setEditFormData({ ...editFormData, prepTime: Number(e.target.value) })}
+                    />
+                  </div>
+
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select
                       className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
@@ -497,7 +508,7 @@ export default function AdminMenuPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
                   <input
@@ -510,6 +521,17 @@ export default function AdminMenuPage() {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Prep Time (mins)</label>
+                  <input
+                    type="number"
+                    className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                    placeholder="15"
+                    min="0"
+                    value={newItem.prepTime || ''}
+                    onChange={e => setNewItem({ ...newItem, prepTime: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                   <select
                     className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"

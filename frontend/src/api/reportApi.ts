@@ -25,6 +25,16 @@ export interface UserStats {
     }[];
 }
 
+export interface CategoryData {
+    name: string;
+    value: number;
+}
+
+export interface PaymentData {
+    name: string;
+    value: number;
+}
+
 export const reportApi = {
     getDashboardStats: async (startDate?: string, endDate?: string) => {
         return axiosClient.get('/reports/dashboard', {
@@ -38,13 +48,27 @@ export const reportApi = {
         }) as unknown as Promise<RevenueData[]>;
     },
 
-    getTopSellingItems: async () => {
-        return axiosClient.get('/reports/top-selling') as unknown as Promise<TopSellingItem[]>;
+    getTopSellingItems: async (startDate?: string, endDate?: string) => {
+        return axiosClient.get('/reports/top-selling', {
+            params: { startDate, endDate }
+        }) as unknown as Promise<TopSellingItem[]>;
     },
 
     getUserStats: async (startDate: string, endDate: string) => {
         return axiosClient.get('/reports/user-stats', {
             params: { startDate, endDate }
         }) as unknown as Promise<UserStats>;
+    },
+
+    getCategoryStats: async (startDate: string, endDate: string) => {
+        return axiosClient.get('/reports/category-stats', {
+            params: { startDate, endDate }
+        }) as unknown as Promise<CategoryData[]>;
+    },
+
+    getPaymentStats: async (startDate: string, endDate: string) => {
+        return axiosClient.get('/reports/payment-stats', {
+            params: { startDate, endDate }
+        }) as unknown as Promise<PaymentData[]>;
     }
 };

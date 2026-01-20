@@ -118,7 +118,7 @@ export const deleteCategoryById = async (id: string) => {
 
 // Create menu item
 export const createMenuItem = async (data: any) => {
-  const { categoryId, name, description, price, isChefRecommended, status } =
+  const { categoryId, name, description, price, isChefRecommended, status, prepTime } =
     data;
 
   return await prisma.menuItem.create({
@@ -128,6 +128,7 @@ export const createMenuItem = async (data: any) => {
       description,
       price,
       isChefRecommended,
+      prepTime: prepTime ? parseInt(prepTime) : 15,
       status: status || MenuItemStatus.AVAILABLE,
     },
   });

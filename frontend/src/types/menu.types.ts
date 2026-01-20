@@ -32,6 +32,7 @@ export interface CreateMenuItemRequest {
     price: number;
     status?: 'AVAILABLE' | 'UNAVAILABLE' | 'SOLD_OUT';
     isChefRecommended?: boolean;
+    prepTime?: number;
     photos?: { url: string; isPrimary: boolean }[];
 }
 
