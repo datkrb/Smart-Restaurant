@@ -11,7 +11,7 @@ const MOMO_CONFIG = {
   secretKey: process.env.MOMO_SECRET_KEY || 'K951B6PE1waDMi640xX08PD3vg6EkVlz',
   endpoint: process.env.MOMO_ENDPOINT || 'https://test-payment.momo.vn/v2/gateway/api/create',
   ipnUrl: process.env.MOMO_IPN_URL || 'http://localhost:4000/api/v1/payment/momo/ipn',
-  redirectUrl: process.env.MOMO_REDIRECT_URL || 'http://localhost:5173/tracking',
+  redirectUrl: process.env.MOMO_REDIRECT_URL || 'http://localhost:3000/tracking',
 };
 
 interface MoMoCreateResponse {
@@ -58,7 +58,7 @@ export async function createMoMoPayment(orderId: string): Promise<MoMoCreateResp
   const amount = Math.round(order.totalAmount);
   const requestId = `${orderId}_${Date.now()}`;
   const orderInfo = `Smart Restaurant - ${order.tableSession?.table?.name || 'Table'} - #${orderId.slice(-6)}`;
-  const requestType = 'captureWallet';
+  const requestType = 'payWithMethod';
   const extraData = Buffer.from(JSON.stringify({ orderId })).toString('base64');
   
   // Use a unique orderId for MoMo to avoid "Duplicate OrderId" error
