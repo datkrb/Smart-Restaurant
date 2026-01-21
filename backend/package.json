@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "ts-node-dev src/server.ts",
+    "dev": "ts-node-dev --poll src/server.ts",
     "build": "tsc",
     "start": "node dist/src/server.js",
     "prisma": "prisma"
@@ -16,7 +16,7 @@
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "body-parser": "^1.20.2",
-    "cloudinary": "^2.9.0",
+    "cloudinary": "^1.41.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^4.18.2",

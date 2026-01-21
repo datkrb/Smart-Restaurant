@@ -142,9 +142,10 @@ export default function AdminTablePage() {
       return;
     }
 
-    const confirm = await ui.confirmDelete(
+    const confirm = await ui.confirmAction(
       "Download All QRs?",
-      `This will generate a PDF with ${tables.length} pages.`
+      `This will generate a PDF with ${tables.length} pages.`,
+      "Download"
     );
 
     if (!confirm.isConfirmed) return;

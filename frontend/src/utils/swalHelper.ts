@@ -37,7 +37,7 @@ export const ui = {
   /**
    * Hộp thoại xác nhận chung (màu cam thương hiệu)
    */
-  confirmAction: async (title: string, text: string) => {
+  confirmAction: async (title: string, text: string, confirmButtonText: string = 'Đồng ý') => {
     return MySwal.fire({
       title: React.createElement('span', { className: 'text-xl font-bold' }, title),
       text: text,
@@ -45,7 +45,7 @@ export const ui = {
       showCancelButton: true,
       confirmButtonColor: COLORS.primary,
       cancelButtonColor: COLORS.secondary,
-      confirmButtonText: 'Đồng ý',
+      confirmButtonText: confirmButtonText,
       cancelButtonText: 'Quay lại',
       customClass: { popup: 'rounded-3xl' }
     });

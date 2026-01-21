@@ -1,5 +1,5 @@
 import multer from 'multer';
-import { v2 as cloudinary } from 'cloudinary';
+const cloudinary = require('cloudinary').v2;
 // @ts-ignore: No types available
 import CloudinaryStorage from 'multer-storage-cloudinary';
 import path from 'path';
