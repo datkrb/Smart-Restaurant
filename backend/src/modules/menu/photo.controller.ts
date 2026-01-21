@@ -18,7 +18,7 @@ export const uploadPhotos = async (req: Request, res: Response) => {
         // Lưu thông tin từng ảnh vào DB
         const photoData = files.map(file => ({
             menuItemId: itemId,
-            url: file.path, // Cloudinary URL automatically provided by multer-storage-cloudinary
+            url: (file as any).secure_url,
             isPrimary: false
         }));
 
