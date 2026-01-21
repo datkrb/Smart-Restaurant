@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../../api/authApi';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -68,6 +68,9 @@ const LoginPage = () => {
     setError('');
     setPassword('');
   };
+
+
+
 
   return (
     <div className="font-sans bg-background-light min-h-screen flex flex-col text-text-main overflow-x-hidden">
@@ -222,6 +225,8 @@ const LoginPage = () => {
                       </button>
                     </div>
                   </div>
+
+
 
                   <p className="text-center text-xs text-text-secondary mt-2">
                     By continuing, you agree to Smart Restaurant's <a className="underline hover:text-primary" href="#">Terms</a> and <a className="underline hover:text-primary" href="#">Privacy Policy</a>.

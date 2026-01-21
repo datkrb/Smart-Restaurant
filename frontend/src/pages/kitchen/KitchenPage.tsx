@@ -136,7 +136,7 @@ export default function KitchenPage() {
       });
 
       // Khi có thay đổi trạng thái đơn hàng (từ Waiter duyệt hoặc Bếp khác làm xong)
-      socket.on('order_status_updated', (updatedOrder: Order) => {
+      socket.on('order_status_change', (updatedOrder: Order) => {
         setOrders(prev => {
           // Nếu đơn hàng chuyển sang PREPARING -> Thêm vào danh sách bếp
           if (updatedOrder.status === 'PREPARING') {
@@ -165,7 +165,7 @@ export default function KitchenPage() {
     return () => {
       clearInterval(interval);
       socket?.off('order_accepted');
-      socket?.off('order_status_updated');
+      socket?.off('order_status_change');
       socket?.off('order_ready');
     };
   }, [socket]);

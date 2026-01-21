@@ -14,6 +14,72 @@ const EntryPoint = () => {
   const token = searchParams.get('token');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // QR Scanner State
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+
+  // Initialize Scanner when modal opens
+  useEffect(() => {
+    let html5QrCode: any;
+    
+    if (showScanner) {
+      import('html5-qrcode').then(({ Html5Qrcode }) => {
+        html5QrCode = new Html5Qrcode("reader");
+      });
+    }
+
+    return () => {
+       if (html5QrCode && html5QrCode.isScanning) {
+          html5QrCode.stop().catch((err: any) => console.error(err));
+       }
+    };
+  }, [showScanner]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setScanError(null);
+      
+      try {
+        const { Html5Qrcode } = await import('html5-qrcode');
+        const html5QrCode = new Html5Qrcode("reader");
+        const decodedText = await html5QrCode.scanFile(file, true);
+        
+        console.log("Scanned from file:", decodedText);
+        setShowScanner(false);
+        window.location.href = decodedText;
+      } catch (err) {
+        console.error(err);
+        setScanError("Could not find a valid QR code in this image. Please try a clearer image.");
+      }
+    }
+  };
+
+  const startCamera = async () => {
+     setScanError(null);
+     try {
+       const { Html5Qrcode } = await import('html5-qrcode');
+       const html5QrCode = new Html5Qrcode("reader");
+       
+       await html5QrCode.start(
+         { facingMode: "environment" },
+         { fps: 10, qrbox: { width: 250, height: 250 } },
+         (decodedText: string) => {
+            console.log("Scanned from camera:", decodedText);
+            html5QrCode.stop();
+            setShowScanner(false);
+            window.location.href = decodedText;
+         },
+         (errorMessage: string) => {
+           // Parse error, ignore common scanning errors
+         }
+       );
+     } catch (err) {
+       console.error("Camera start failed", err);
+       setScanError("Failed to access camera. Please check permissions.");
+     }
+  };
 
   useEffect(() => {
     if (tableId && token) {
@@ -45,6 +111,56 @@ const EntryPoint = () => {
   if (!tableId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex flex-col">
+        {/* QR SCANNER MODAL */}
+        {showScanner && (
+          <div className="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-md relative flex flex-col items-center">
+              <button
+                onClick={() => setShowScanner(false)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
+              >
+                ✕
+              </button>
+              <h3 className="text-xl font-bold mb-4 text-center">Scan Table QR</h3>
+              
+              {/* Camera Viewport */}
+              <div id="reader" className="w-full bg-gray-100 rounded-lg overflow-hidden min-h-[300px] mb-4 relative">
+                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <p className="text-gray-400 text-sm">Camera inactive</p>
+                 </div>
+              </div>
+
+              {scanError && (
+                 <div className="mb-4 p-3 bg-red-100 text-red-700 text-sm rounded-lg w-full text-center">
+                    {scanError}
+                 </div>
+              )}
+
+              <div className="flex flex-col gap-3 w-full">
+                 <button 
+                   onClick={startCamera}
+                   className="w-full py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors flex items-center justify-center gap-2"
+                 >
+                    <QrCode size={18} /> Use Camera
+                 </button>
+                 
+                 <div className="relative">
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <button className="w-full py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-center">
+                       Upload QR Image
+                    </button>
+                 </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <header className="bg-white/80 backdrop-blur-sm border-b border-orange-100 sticky top-0 z-10">
           <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
@@ -117,9 +233,18 @@ const EntryPoint = () => {
             </div>
 
             {/* Demo Link */}
-            <p className="text-gray-400 text-xs">
-              No QR code? Ask your waiter for assistance.
-            </p>
+            <div className="flex flex-col gap-3">
+               <button
+                  onClick={() => setShowScanner(true)}
+                  className="mx-auto flex items-center justify-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-full font-bold shadow-lg shadow-orange-200 hover:bg-orange-600 transition-all active:scale-95"
+                >
+                  <QrCode size={20} />
+                  Scan Table QR
+                </button>
+                <p className="text-gray-400 text-xs">
+                  No QR code? Ask your waiter for assistance.
+                </p>
+            </div>
           </div>
         </main>
 

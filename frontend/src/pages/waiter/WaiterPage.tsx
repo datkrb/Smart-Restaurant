@@ -182,7 +182,7 @@ export default function WaiterPage() {
       });
 
       // Order status update notification
-      socket.on('order_status_updated', (updatedOrder: Order) => {
+      socket.on('order_status_change', (updatedOrder: Order) => {
         if (updatedOrder.status === 'READY') {
           toast.success(`Order for ${updatedOrder.tableSession.table.name} is ready!`, { icon: '🛎️', duration: 5000 });
           if (activeTab === 'READY') {
@@ -208,7 +208,7 @@ export default function WaiterPage() {
     return () => {
       clearInterval(interval);
       socket?.off('new_order');
-      socket?.off('order_status_updated');
+      socket?.off('order_status_change');
       socket?.off('bill_requested');
     };
   }, [activeTab, socket]);
