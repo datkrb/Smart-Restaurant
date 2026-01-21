@@ -16,6 +16,7 @@
   "include": [
     "src/**/*.ts",
     "src/types/**/*.d.ts",
+    "src/types.d.ts",
     "prisma/**/*.ts"
   ],
   "exclude": [

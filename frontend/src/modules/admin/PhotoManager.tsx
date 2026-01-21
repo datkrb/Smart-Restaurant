@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { ui } from '../../utils/swalHelper';
+import { getPhotoUrl } from '../../utils/photoUrl';
 
 interface Photo {
   id: string;
@@ -26,7 +27,7 @@ export default function PhotoManager({ itemId, photos, onRefresh }: { itemId: st
     setUploading(true);
 
     try {
-      await axiosClient.post(`/admin/menu-items/${itemId}/photos`, formData, {
+      await axiosClient.post(`/menu/menu-items/${itemId}/photos`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       toast.success("Tải ảnh thành công!", { id: loadId, duration: 2000 });
@@ -46,7 +47,7 @@ export default function PhotoManager({ itemId, photos, onRefresh }: { itemId: st
 
     if (result.isConfirmed) {
       try {
-        await axiosClient.delete(`/admin/photos/${photoId}`);
+        await axiosClient.delete(`/menu/photos/${photoId}`);
         ui.alertSuccess("Đã xóa ảnh!");
         onRefresh();
       } catch (err) {
@@ -57,7 +58,7 @@ export default function PhotoManager({ itemId, photos, onRefresh }: { itemId: st
 
   const handleSetPrimary = async (photoId: string) => {
     try {
-      await axiosClient.patch('/admin/photos/set-primary', { photoId, itemId });
+      await axiosClient.patch('/menu/photos/set-primary', { photoId, itemId });
       ui.alertSuccess("Đã cập nhật ảnh chính!");
       onRefresh();
     } catch (err) {
@@ -71,7 +72,7 @@ export default function PhotoManager({ itemId, photos, onRefresh }: { itemId: st
       <div className="grid grid-cols-3 gap-3 mb-4">
         {photos?.map((photo: any) => (
           <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden border bg-white group">
-            <img src={photo.url} alt="menu" className="w-full h-full object-cover" />
+            <img src={getPhotoUrl(photo.url)} alt="menu" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-2 transition-opacity">
               <button
                 onClick={() => handleSetPrimary(photo.id)}

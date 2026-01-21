@@ -1,6 +1,7 @@
 import React from 'react';
 import { MenuItem } from '../../types';
 import { X, Tag, Info, ChefHat, DollarSign, Layers } from 'lucide-react';
+import { getPhotoUrl } from '../../utils/photoUrl';
 
 interface MenuItemDetailProps {
   item: MenuItem;
@@ -19,7 +20,7 @@ export default function MenuItemDetail({ item }: MenuItemDetailProps) {
             <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
                 {primaryPhoto ? (
                     <img 
-                        src={primaryPhoto.url} 
+                        src={getPhotoUrl(primaryPhoto.url)} 
                         alt={item.name} 
                         className="w-full h-full object-cover"
                     />
@@ -31,7 +32,7 @@ export default function MenuItemDetail({ item }: MenuItemDetailProps) {
                 <div className="flex gap-2 chat-scroll overflow-x-auto pb-2">
                     {otherPhotos.map(p => (
                         <div key={p.id} className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200">
-                             <img src={p.url} className="w-full h-full object-cover" alt="" />
+                             <img src={getPhotoUrl(p.url)} className="w-full h-full object-cover" alt="" />
                         </div>
                     ))}
                 </div>

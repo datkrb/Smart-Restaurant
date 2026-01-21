@@ -25,6 +25,7 @@ export interface MenuItem {
   name: string;
   price: number;
   description: string;
+  prepTime?: number;
   status: 'AVAILABLE' | 'UNAVAILABLE' | 'SOLD_OUT';
   isChefRecommended: boolean;
   modifierGroups: ModifierGroup[];

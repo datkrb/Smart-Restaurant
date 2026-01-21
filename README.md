@@ -390,7 +390,7 @@ exit
 
 #### Step 3: Access the Application
 
-- **Frontend:** http://localhost:3000
+- **Frontend:** http://localhost:5173
 - **Backend API:** http://localhost:4000
 - **PostgreSQL:** localhost:5432
 - **Redis:** localhost:6379
@@ -476,7 +476,7 @@ Default password is usually set in the seed file.
 ```bash
 # Check what's using the port
 netstat -ano | findstr :4000
-netstat -ano | findstr :3000
+netstat -ano | findstr :5173
 
 # Kill the process (Windows)
 taskkill /PID <process-id> /F

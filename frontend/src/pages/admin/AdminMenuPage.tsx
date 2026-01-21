@@ -11,6 +11,7 @@ import { CreateMenuItemRequest } from '../../types/menu.types';
 import ModifierManager from '../../modules/admin/ModifierManager';
 import MenuItemDetail from '../../modules/admin/MenuItemDetail';
 import { Layers, Edit, Trash2, Plus, X, Search, Filter } from 'lucide-react';
+import { getPhotoUrl } from '../../utils/photoUrl';
 
 const MySwal = withReactContent(Swal);
 
@@ -97,7 +98,7 @@ export default function AdminMenuPage() {
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await menuApi.createMenuItem(newItem);
+      const createdItem = await menuApi.createMenuItem(newItem);
       setIsModalOpen(false);
       setNewItem({
         name: '',
@@ -107,8 +108,13 @@ export default function AdminMenuPage() {
         isChefRecommended: false,
         status: 'AVAILABLE'
       });
-      ui.alertSuccess("Item added successfully");
-      fetchData();
+      ui.alertSuccess("Item created! Now you can upload photos.");
+      await fetchData();
+      
+      // Open edit modal for the newly created item to allow photo upload
+      if (createdItem && createdItem.id) {
+        openEditModal({ ...createdItem, photos: [] });
+      }
     } catch (error) {
       ui.alertError("Failed to add item (Make sure category is selected)");
     }
@@ -239,9 +245,9 @@ export default function AdminMenuPage() {
                     onClick={() => setViewingItem(item)}
                     className="w-16 h-16 rounded-lg bg-gray-100 overflow-hidden border border-gray-200 flex items-center justify-center relative cursor-pointer hover:ring-2 hover:ring-orange-500 transition-all"
                   >
-                    {item.photos?.some(p => p.isPrimary) ? (
+                    {item.photos && item.photos.length > 0 ? (
                       <img
-                        src={item.photos.find(p => p.isPrimary)?.url}
+                        src={getPhotoUrl((item.photos.find(p => p.isPrimary) || item.photos[0])?.url)}
                         alt={item.name}
                         className="w-full h-full object-cover"
                       />
@@ -373,7 +379,17 @@ export default function AdminMenuPage() {
                   <PhotoManager
                     itemId={editingItem.id}
                     photos={editingItem.photos || []}
-                    onRefresh={fetchData}
+                    onRefresh={async () => {
+                      if (editingItem) {
+                        try {
+                           const updated = await menuApi.getMenuItemById(editingItem.id);
+                           setEditingItem(updated);
+                        } catch (e) {
+                          console.error("Failed to refresh item details", e);
+                        }
+                      }
+                      fetchData();
+                    }}
                   />
                 </div>
               </section>

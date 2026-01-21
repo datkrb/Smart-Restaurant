@@ -47,7 +47,7 @@ const generateTableQRUrl = (table: any) => {
         { expiresIn: '365d' }
     );
 
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
     return `${frontendUrl}/?tableId=${table.id}&token=${token}`;
 };
 

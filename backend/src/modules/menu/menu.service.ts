@@ -218,6 +218,7 @@ export const getMenuItemById = async (id: string) => {
     },
     include: {
       category: true,
+      photos: true,
       modifierGroups: {
         include: {
           options: true,
@@ -359,6 +360,7 @@ export const getMenuItems = async (options: MenuItemOptions) => {
       orderBy,
       include: {
         category: true,
+        photos: true,
         modifierGroups: {
           include: {
             options: true,
