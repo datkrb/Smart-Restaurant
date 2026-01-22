@@ -35,7 +35,7 @@ class EmailService {
   }
 
   async sendVerificationEmail(to: string, token: string) {
-    const verificationUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/verify-email?token=${token}`;
+    const verificationUrl = `${process.env.FRONTEND_URL || "https://smart-restaurant-fe.onrender.com/"}/verify-email?token=${token}`;
     const subject = "Verify Your Email Address";
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -52,7 +52,7 @@ class EmailService {
 
   async sendPasswordResetEmail(to: string, token: string) {
     // Note: Frontend should have a route /reset-password?token=...
-    const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password?token=${token}`;
+    const resetUrl = `${process.env.FRONTEND_URL || "https://smart-restaurant-fe.onrender.com/"}/reset-password?token=${token}`;
     const subject = "Reset Your Password";
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
